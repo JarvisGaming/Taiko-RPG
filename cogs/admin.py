@@ -65,7 +65,6 @@ class AdminCog(commands.Cog):
         
         synced = await bot.tree.sync()
         await ctx.channel.send(f"Synced {len(synced)} commands.")
-        await ctx.channel.send(f"i updated the code in the test bot")
         
 async def setup(bot):
     await bot.add_cog(AdminCog(bot))
