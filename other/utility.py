@@ -5,6 +5,7 @@ from discord.ext import commands, tasks
 from discord import app_commands
 
 from other.global_constants import *
+from data.channel_list import APPROVED_CHANNEL_ID_LIST
 
 @tasks.loop(hours=1)
 async def clean_replay_database():

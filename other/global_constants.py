@@ -15,9 +15,6 @@ OSU_API_KEY: str = os.environ["OSU_API_KEY"]  # Legacy API
 
 JARVIS_ID = 208433054572740608  # (That's me!)
 
-APPROVED_CHANNEL_ID_LIST: list[int] = [1245302768739160078,  # TSR test #general
-                                       1246350996695679077]  # TSR test #general-2
-
 ADMIN_ID_LIST: list[int] = [208433054572740608]  # jarvisgaming
 
 ACCEPTED_MODS: list[str] = ['NM', 'NF', 'HD', 'HR', 'SD', 'PF', 'ScoreV2']  # Mods that are allowed in replays
