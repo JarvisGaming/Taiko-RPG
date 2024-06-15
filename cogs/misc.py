@@ -27,6 +27,7 @@ class MiscCog(commands.Cog):
                 The only restrictions for replays are:
                 - Replays have to be made in the last 24 hours
                 - Replays have to be made on submitted maps
+                - Your replay doesn't have to be a pass
                 - Mods that are currently allowed: {mod_list}
                 """ 
         text = inspect.cleandoc(text)  # Removes weird indentation of doc strings
