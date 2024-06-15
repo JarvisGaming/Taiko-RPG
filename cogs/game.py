@@ -145,7 +145,7 @@ async def replay_already_submitted(conn: aiosqlite.Connection, channel: discord.
 def calculate_total_exp_gained(replay: osrparse.Replay, beatmap: ossapi.Beatmap) -> int:
     """Calculate the TOTAL exp gained from submitting a replay based on a formula."""
     
-    total_exp_gained = math.pow(max(3*replay.count_300 + 0.75*replay.count_100 - 3*replay.count_miss, 0), 0.6) * math.pow(max(beatmap.difficulty_rating+1, 11), 1.2) * 0.05
+    total_exp_gained = math.pow(max(3*replay.count_300 + 0.75*replay.count_100 - 3*replay.count_miss, 0), 0.6) * math.pow(min(beatmap.difficulty_rating+1, 11), 1.2) * 0.05
     total_exp_gained = int(total_exp_gained)
     return total_exp_gained
 
