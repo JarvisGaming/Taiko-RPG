@@ -37,7 +37,7 @@ def determine_mods_used(replay: osrparse.Replay) -> dict[str, bool]:
     mods_used: dict[str, bool] = {
         # Every mod other than these are irrelevant for taiko
         
-        'NM': replay_mods == 0,  # A replay is NoMod when no other mods are on
+        'NM': True,  # We set this to True for now and check whether it's actually the case later
         'NF': bool(replay_mods & (1 << 0)),
         'EZ': bool(replay_mods & (1 << 1)),
         'TD': bool(replay_mods & (1 << 2)),
@@ -55,6 +55,14 @@ def determine_mods_used(replay: osrparse.Replay) -> dict[str, bool]:
         'PF': bool(replay_mods & (1 << 14)),  # If this is on, SD is also on
         "ScoreV2": bool(replay_mods & (1 << 29))
     }
+    
+    # Even if only ScoreV2 / NF / SD / PF is on, we still want it to count as a NoMod replay
+    for mod in ACCEPTED_MODS:
+        
+        # If it's not one of those mods but it's turned on, then the replay doesn't count as NoMod
+        if mod not in ['NM', 'ScoreV2', 'NF', 'SD', 'PF'] and mods_used[mod] == True:
+            mods_used['NM'] = False
+            break
     
     return mods_used
 
@@ -171,7 +179,7 @@ def calculate_mod_exp_gained(total_exp_gained: int, exp_gained: dict[str, int], 
     # Update the overall exp gained in the exp_gained dict
     exp_gained['Overall'] = total_exp_gained
     
-    # If no mods are active, allocate all exp gained to NoMod
+    # If the replay is NoMod, allocate all exp gained to NoMod
     if mods_used['NM'] == True:
         exp_gained['NM'] = total_exp_gained
         return
@@ -267,10 +275,9 @@ def get_mod_list(mods_used: dict[str, bool]) -> str:
         if value == False:
             continue
         
-        # If the mod is active AND it's NoMod, then NoMod is the only thing active
+        # We check for NoMod later, since NoMod can be active alongside other mods like ScoreV2 and NF
         if key == 'NM':
-            mod_list = "NoMod"
-            break
+            continue
         
         # If SD is active AND PF is active, don't display SD
         if key == 'SD' and mods_used['PF'] == True:
@@ -282,6 +289,10 @@ def get_mod_list(mods_used: dict[str, bool]) -> str:
         
         # Otherwise just add the active mod to the list
         mod_list += (f"{key} ")
+    
+    # If the mod list is empty, it means that the replay is NoMod
+    if mod_list == "":
+        mod_list = "NoMod"
     
     return mod_list.strip()  # Removes trailing space
 

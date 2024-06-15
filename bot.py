@@ -34,7 +34,7 @@ sys.stderr = open("./logs.log", "w")  # Redirect stderr to log file
 bot.run(BOT_TOKEN)
 
 """
-- allow DT/HT
+- allow DT/HT (beatmap_attributes)
 - check for lazer mods (difficulty adjust)
 - pagination: https://stackoverflow.com/questions/76247812/how-to-create-pagination-embed-menu-in-discord-py
 - online hosting (or a fucking raspberry pi)
