@@ -36,6 +36,10 @@ bot.run(BOT_TOKEN)
 """
 - add map link to replay display
 - check for lazer mods (see pinned discord DM)
+    - check for missing life graph in replays, then prompt for the user to use a /submit command to submit the lazer replay
+    - use HTTP requests to get the (recent) score(s) with https://osu.ppy.sh/docs/index.html#get-user-scores (+ parameters maybe)
+    - turn the score(s) into an osrparse replay file(s)
+    - separate out the replay processing process from the original submit into a separate function
 - allow DT/HT (beatmap_attributes)
 - pagination: https://stackoverflow.com/questions/76247812/how-to-create-pagination-embed-menu-in-discord-py
 - online hosting (or a fucking raspberry pi)

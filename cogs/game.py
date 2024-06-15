@@ -302,13 +302,16 @@ async def add_replay_stats(embed: discord.Embed, beatmap: ossapi.Beatmap, beatma
     
     mod_list = get_mod_list(mods_used)
     accuracy = calculate_accuracy(replay)
+    map_link = f"https://osu.ppy.sh/beatmapsets/{beatmapset.id}#taiko/{beatmap.id}"
     
     # Add the replay stats to the embed
     embed.title = f"Your replay has been submitted!"
-    metadata: str = f"{beatmapset.artist} - {beatmapset.title} [{beatmap.version}]"
-    stats: str = f"{beatmap.difficulty_rating:.2f}* ▸ {accuracy:.2f}% ▸ `[{replay.count_300} • {replay.count_100} • {replay.count_miss}]` ▸ {mod_list}"
+    metadata = f"**[{beatmapset.artist} - {beatmapset.title} [{beatmap.version}]]({map_link})**"
+    stats = f"{beatmap.difficulty_rating:.2f}* ▸ {accuracy:.2f}% ▸ `[{replay.count_300} • {replay.count_100} • {replay.count_miss}]` ▸ {mod_list}"
     
-    embed.add_field(name=metadata, value=stats, inline=False)
+    # Combine all the text into one line, since you can't do markdown formatting (embedding map link) in the name of a field
+    text = metadata + '\n' + stats
+    embed.add_field(name='', value=text, inline=False)
 
 async def add_updated_user_exp(conn: aiosqlite.Connection, embed: discord.Embed, osu_id: int, exp_gained: dict[str, int]):
     """Add user's updated exp values to the embed. Mods whose exp have no update aren't displayed."""
