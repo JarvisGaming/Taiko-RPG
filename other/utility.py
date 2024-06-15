@@ -54,7 +54,7 @@ def is_verified():
 
         # If the user isn't in the database, they aren't verified
         if data is None:
-            await interaction.response.send_message("You aren't verified yet. Do !verify <profile link> to get started!")
+            await interaction.response.send_message("You aren't verified yet. Do /verify <profile link> to get started!")
             return False
         return True
     
