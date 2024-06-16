@@ -4,7 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from other.global_constants import *
-from other.utility import create_str_of_accepted_mods
+from other.utility import create_str_of_allowed_replay_mods
 
 class MiscCog(commands.Cog):
     def __init__(self, bot):
@@ -18,7 +18,7 @@ class MiscCog(commands.Cog):
         embed.add_field(name="1. Verify yourself", value="Use `/verify <profile link>` to get started!", inline=False)
            
         # Adds all currently accepted mods to the text
-        mod_list = create_str_of_accepted_mods()
+        mod_list = create_str_of_allowed_replay_mods()
         text =  f"""
                 Drag your replays into this channel to submit them!
                 (You can submit multiple at a time!)

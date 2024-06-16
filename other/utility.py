@@ -86,18 +86,13 @@ async def send_in_all_channels(message: str):
         channel = bot.get_channel(channel_id)
         await channel.send(message)  # type: ignore
         
-def create_str_of_accepted_mods() -> str:
+def create_str_of_allowed_replay_mods() -> str:
     """Creates a string listing all currently accepted mods."""
     
     new_message = ""
     
-    # Adds all accepted mods to the message
-    for mod in ACCEPTED_MODS:
-        
-        # Skip NM, since it's not a "mod"
-        if mod == 'NM': 
-            continue
-        
+    # Adds all allowed mods to the message
+    for mod in ALLOWED_REPLAY_MODS:
         new_message += f"{mod} "
     
     return new_message.strip()  # Removes trailing space

@@ -13,8 +13,8 @@ from discord.ext import commands
 from other.global_constants import *
 from other.utility import *
 
-async def user_is_not_verified(conn: aiosqlite.Connection, channel: discord.abc.Messageable, discord_id: int) -> bool:
-    """Checks if user is NOT verified. Return True if yes, False otherwise."""
+async def user_is_verified(conn: aiosqlite.Connection, channel: discord.abc.Messageable, discord_id: int) -> bool:
+    """Checks if user is verified. Return True if yes, False otherwise."""
     
     cursor = await conn.cursor()
     
@@ -25,8 +25,8 @@ async def user_is_not_verified(conn: aiosqlite.Connection, channel: discord.abc.
     # If we can't find anything, that means the user is not verified
     if data is None:
         await channel.send("You are not verified. Do `/verify <profile link>` to get started!")
-        return True
-    return False
+        return False
+    return True
 
 def determine_mods_used(replay: osrparse.Replay) -> dict[str, bool]:
     """Given a replay, return a dict with mods as the keys, and bool values to indicate whether they are turned on."""
@@ -37,7 +37,7 @@ def determine_mods_used(replay: osrparse.Replay) -> dict[str, bool]:
     mods_used: dict[str, bool] = {
         # Every mod other than these are irrelevant for taiko
         
-        'NM': True,  # We set this to True for now and check whether it's actually the case later
+        'NM': True,  # We check whether it's actually the case later, since there are certain mods that we want to count as NoMod
         'NF': bool(replay_mods & (1 << 0)),
         'EZ': bool(replay_mods & (1 << 1)),
         'TD': bool(replay_mods & (1 << 2)),
@@ -57,10 +57,14 @@ def determine_mods_used(replay: osrparse.Replay) -> dict[str, bool]:
     }
     
     # Even if only ScoreV2 / NF / SD / PF is on, we still want it to count as a NoMod replay
-    for mod in ACCEPTED_MODS:
+    for mod, is_turned_on in mods_used.items():
+        
+        # Ignore NM since we set it to True by default
+        if mod == 'NM': 
+            continue
         
         # If it's not one of those mods but it's turned on, then the replay doesn't count as NoMod
-        if mod not in ['NM', 'ScoreV2', 'NF', 'SD', 'PF'] and mods_used[mod] == True:
+        if mod not in ['ScoreV2', 'NF', 'SD', 'PF'] and is_turned_on:
             mods_used['NM'] = False
             break
     
@@ -70,31 +74,31 @@ async def replay_has_illegal_mods(channel: discord.abc.Messageable, mods_used: d
     """Check if replay uses a mod that is unsupported. Return True if yes, False otherwise."""
     
     # Cycle through all entries in the mods_used dict
-    for mod, value in mods_used.items():
+    for mod, is_turned_on in mods_used.items():
         
         # No need to do anything if the replay uses a mod that's accepted
-        if mod in ACCEPTED_MODS:
+        if mod in ALLOWED_REPLAY_MODS or mod == 'NM':
             continue
         
         # If it's not an accepted mod, we'll check whether it's turned on
-        if value == True:
+        if is_turned_on == True:
             
             # If it's turned on, we'll send a message
             new_message = "Only the following mods are supported: "
-            new_message += create_str_of_accepted_mods()
+            new_message += create_str_of_allowed_replay_mods()
                 
             await channel.send(new_message)
             return True
     
     return False
 
-async def replay_is_not_taiko(channel: discord.abc.Messageable, replay: osrparse.Replay) -> bool:
-    """Check if replay is NOT a taiko replay. Return True if yes, False otherwise."""
+async def replay_is_taiko(channel: discord.abc.Messageable, replay: osrparse.Replay) -> bool:
+    """Check if replay is a taiko replay. Return True if yes, False otherwise."""
     
     if replay.mode != osrparse.GameMode.TAIKO:
         await channel.send("This isn't a taiko replay!")
-        return True
-    return False
+        return False
+    return True
 
 async def replay_is_a_convert(channel: discord.abc.Messageable, beatmap: ossapi.Beatmap) -> bool:
     """Check if replay is a convert. Return True if yes, False otherwise."""
@@ -115,8 +119,8 @@ async def replay_is_outdated(channel: discord.abc.Messageable, replay: osrparse.
         return True
     return False
 
-async def replay_not_made_by_user(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id_in_replay: int, discord_id: int) -> bool:
-    """Check if replay was NOT made by user. Return True if yes, False otherwise."""
+async def replay_made_by_user(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id_in_replay: int, discord_id: int) -> bool:
+    """Check if replay was made by the user. Return True if yes, False otherwise."""
  
     cursor = await conn.cursor()
  
@@ -129,9 +133,9 @@ async def replay_not_made_by_user(conn: aiosqlite.Connection, channel: discord.a
 
     # If user's osu id in the database is different than that in the replay, that means it's not made by the user
     if osu_id_in_database != osu_id_in_replay:
-        await channel.send("This replay is not yours!")
-        return True
-    return False
+        await channel.send("This replay is not made by you!")
+        return False
+    return True
 
 async def replay_already_submitted(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id: int, 
                                    beatmap: ossapi.Beatmap, beatmapset: ossapi.Beatmapset, replay: osrparse.Replay) -> bool:
@@ -158,14 +162,14 @@ def calculate_total_exp_gained(replay: osrparse.Replay, beatmap: ossapi.Beatmap)
     return total_exp_gained
 
 def create_exp_dict() -> dict[str, int]:
-    """Returns a dict with all relevant mods (mods with their own exp, including the overall exp) as keys, with their values set to 0."""
+    """Returns a dict with all exp bars as keys, with their values set to 0."""
     
-    # Initialize it with the overall exp data
-    exp_dict = {'Overall': 0} 
+    # Initialize the dict
+    exp_dict: dict[str, int] = {} 
     
-    # Add all relevant mods to the dict
-    for mod in RELEVANT_MODS:
-        exp_dict[mod] = 0
+    # Add all exp bars
+    for exp_bar_name in EXP_BAR_NAMES:
+        exp_dict[exp_bar_name] = 0
     
     return exp_dict
     
@@ -187,19 +191,21 @@ def calculate_mod_exp_gained(total_exp_gained: int, exp_gained: dict[str, int], 
     # Otherwise, count the number of relevant mods activated
     num_mods_activated: int = 0
     
-    # Loop through all relevant mods
-    for mod in RELEVANT_MODS:
+    for exp_bar_name in EXP_BAR_NAMES:
+        
+        if exp_bar_name == 'Overall': continue
         
         # If a relevant mod is activated, increment the count
-        if mods_used[mod] == True:
+        if mods_used[exp_bar_name] == True:
             num_mods_activated += 1
     
-    # Loop through all relevant mods again
-    for mod in RELEVANT_MODS:
+    # Then evenly allocate the exp to the exp bars with their respective mods activated
+    for exp_bar_name in EXP_BAR_NAMES:
         
-        # Calculate the exp gained for each mod
-        if mods_used[mod] == True:
-            exp_gained[mod] = total_exp_gained // num_mods_activated
+        if exp_bar_name == 'Overall': continue
+
+        if mods_used[exp_bar_name] == True:
+            exp_gained[exp_bar_name] = total_exp_gained // num_mods_activated
             
 def calculate_level_information(total_exp: int, return_level_only: bool = False) -> int | tuple[int, int, int]:
     """
@@ -225,7 +231,7 @@ def calculate_level_information(total_exp: int, return_level_only: bool = False)
         return level
     return level, progress_to_next_lv, exp_required            
 
-async def update_user_exp_and_levels(conn: aiosqlite.Connection, osu_id: int, exp_gained: dict[str, int]):
+async def update_user_exp_and_levels_in_database(conn: aiosqlite.Connection, osu_id: int, exp_gained: dict[str, int]):
     """Update user's exp in the database."""
     
     cursor = await conn.cursor()
@@ -296,7 +302,7 @@ def get_mod_list(mods_used: dict[str, bool]) -> str:
     
     return mod_list.strip()  # Removes trailing space
 
-async def add_replay_stats(embed: discord.Embed, beatmap: ossapi.Beatmap, beatmapset: ossapi.Beatmapset, 
+async def add_replay_stats_to_embed(embed: discord.Embed, beatmap: ossapi.Beatmap, beatmapset: ossapi.Beatmapset, 
                            replay: osrparse.Replay, mods_used: dict[str, bool]):
     """Add different statistics about the replay to an embed.""" 
     
@@ -313,7 +319,7 @@ async def add_replay_stats(embed: discord.Embed, beatmap: ossapi.Beatmap, beatma
     text = metadata + '\n' + stats
     embed.add_field(name='', value=text, inline=False)
 
-async def add_updated_user_exp(conn: aiosqlite.Connection, embed: discord.Embed, osu_id: int, exp_gained: dict[str, int]):
+async def add_updated_user_exp_to_embed(conn: aiosqlite.Connection, embed: discord.Embed, osu_id: int, exp_gained: dict[str, int]):
     """Add user's updated exp values to the embed. Mods whose exp have no update aren't displayed."""
     
     cursor = await conn.cursor()
@@ -331,8 +337,8 @@ async def add_updated_user_exp(conn: aiosqlite.Connection, embed: discord.Embed,
         'HR': data[3],
     }
     
-    # Loop through all mods that have their own exp, in addition to the overall exp
-    for mod_name in (['Overall'] + RELEVANT_MODS):
+    # Loop through all exp bars
+    for mod_name in EXP_BAR_NAMES:
         
         # Only display the mod exp if you gained exp for it
         if exp_gained[mod_name] != 0:
@@ -363,7 +369,7 @@ class GameCog(commands.Cog):
         channel = message.channel
         discord_id = message.author.id
         
-        # Loop through all attachments and parse them individually
+        # Give users the ability to submit multiple replays in one message
         for attachment in message.attachments:
             
             # Record the time it takes to submit one replay
@@ -372,8 +378,7 @@ class GameCog(commands.Cog):
             # Reuse the same connection for the same replay
             async with aiosqlite.connect("./data/database.db") as conn:
             
-                # Exit immediately if user is not verified
-                if await user_is_not_verified(conn, channel, discord_id):
+                if not await user_is_verified(conn, channel, discord_id):
                     break
                 
                 # Skip attachment if it's not a replay (doesn't contain ".osr" at the end)
@@ -409,9 +414,8 @@ class GameCog(commands.Cog):
                     continue
                 
                 # Retrieve beatmap information
-                hash = replay.beatmap_hash
                 try:
-                    beatmap = await osu_api.beatmap(checksum=hash)
+                    beatmap = await osu_api.beatmap(checksum=replay.beatmap_hash)
                     beatmapset = await osu_api.beatmapset(beatmap_id=beatmap.id)
                 except:
                     await channel.send("Map is not submitted!")
@@ -419,65 +423,44 @@ class GameCog(commands.Cog):
                     
                 # Retrieve user information
                 try:
-                    user = await osu_api.user(user=replay.username)
+                    osu_user = await osu_api.user(user=replay.username)
+                    osu_id = osu_user.id
                 except:
                     await channel.send("Can't find user!")
                     continue
-                osu_id = user.id
                 
                 # Get mods used: https://kszlim.github.io/osu-replay-parser/_modules/osrparse/utils.html#Mod
                 # Mods are stored as a bit string
                 mods_used = determine_mods_used(replay)
                 
-                # Skip replay if the replay includes a non-accepted mod
-                if await replay_has_illegal_mods(channel, mods_used):
-                    continue
-                
-                # Skip replay if the gamemode isn't taiko
-                if await replay_is_not_taiko(channel, replay):
-                    continue
-                
-                # Skip replay if it is a convert
-                if await replay_is_a_convert(channel, beatmap):
-                    continue
-                
-                # Skip replay if it is outdated
-                if await replay_is_outdated(channel, replay):
-                    continue
-                
-                # Skip replay if it's not made by user
-                if await replay_not_made_by_user(conn, channel, osu_id, discord_id):
-                    continue
-                
-                # Skip replay if it's already been submitted
-                if await replay_already_submitted(conn, channel, osu_id, beatmap, beatmapset, replay):
+                # A series of checks to determine the validity of the replay
+                if (await replay_has_illegal_mods(channel, mods_used)
+                or await replay_is_a_convert(channel, beatmap)
+                or await replay_is_outdated(channel, replay)
+                or await replay_already_submitted(conn, channel, osu_id, beatmap, beatmapset, replay)
+                or not await replay_is_taiko(channel, replay)
+                or not await replay_made_by_user(conn, channel, osu_id, discord_id)):
                     continue
 
-                # Calculate TOTAL exp gained using an arbitrary formula I cooked up while sleepy
-                total_exp_gained = calculate_total_exp_gained(replay, beatmap)
-                
                 # Calculate exp gained for each mod
                 # If there is more than one mod active, exp is evenly split between them
+                total_exp_gained = calculate_total_exp_gained(replay, beatmap)
                 exp_gained = create_exp_dict()
                 calculate_mod_exp_gained(total_exp_gained, exp_gained, mods_used)
                 
-                # Update user's exp and levels in database
-                await update_user_exp_and_levels(conn, osu_id, exp_gained)
-                
-                # Add the replay to the submitted_replays database
+                # Edit the database
+                await update_user_exp_and_levels_in_database(conn, osu_id, exp_gained)
                 await add_replay_to_database(conn, osu_id, beatmap, beatmapset, replay)
+                
+                # Commit all database changes
+                await conn.commit()
                 
                 # Initialize the embed to be sent
                 embed = discord.Embed()
                 
-                # Add stats about the replay to the embed
-                await add_replay_stats(embed, beatmap, beatmapset, replay, mods_used)
-                
-                # Add the user's updated exp stats to the embed
-                await add_updated_user_exp(conn, embed, osu_id, exp_gained)
-                
-                # Commit all database changes
-                await conn.commit()
+                # Add information to the embed
+                await add_replay_stats_to_embed(embed, beatmap, beatmapset, replay, mods_used)
+                await add_updated_user_exp_to_embed(conn, embed, osu_id, exp_gained)
                 
                 # Calculate the time it took to process the replay and add it to the embed
                 time_taken = datetime.datetime.now() - start_time
@@ -540,7 +523,7 @@ class GameCog(commands.Cog):
         embed = discord.Embed(title=f"{username}'s EXP Stats", colour=discord.Colour.blurple())
         
         # Display user's mod exp by looping through all mods
-        for mod_name in (["Overall"] + RELEVANT_MODS):  # Combine the "Overall" word with the relevant mods list
+        for mod_name in EXP_BAR_NAMES:  # Combine the "Overall" word with the relevant mods list
             
             # Calculate relevant display information
             level, progress_to_next_lv, exp_required = calculate_level_information(total_exp[mod_name])  # type: ignore

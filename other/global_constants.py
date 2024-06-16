@@ -17,8 +17,8 @@ JARVIS_ID = 208433054572740608  # (That's me!)
 
 ADMIN_ID_LIST: list[int] = [208433054572740608]  # jarvisgaming
 
-ACCEPTED_MODS: list[str] = ['NM', 'NF', 'EZ', 'HD', 'HR', 'FL', 'SD', 'PF', 'ScoreV2']  # Mods that are allowed in replays
-RELEVANT_MODS: list[str] = ['NM', 'HD', 'HR']  # Mods that have their own exp
+ALLOWED_REPLAY_MODS: list[str] = ['NF', 'EZ', 'HD', 'HR', 'FL', 'SD', 'PF', 'ScoreV2']
+EXP_BAR_NAMES: list[str] = ['Overall', 'NM', 'HD', 'HR']
 
 osu_api = OssapiAsync(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), activity=discord.CustomActivity(name="🥁 banging your mother 🥁"), help_command=None)
