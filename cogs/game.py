@@ -20,10 +20,10 @@ async def user_is_verified(conn: aiosqlite.Connection, channel: discord.abc.Mess
     
     # Fetch the row with the user's discord id
     await cursor.execute("SELECT 1 FROM exp_table WHERE discord_id=?", (discord_id,))
-    data = await cursor.fetchone()
+    user = await cursor.fetchone()
     
     # If we can't find anything, that means the user is not verified
-    if data is None:
+    if user is None:
         await channel.send("You are not verified. Do `/verify <profile link>` to get started!")
         return False
     return True
@@ -60,8 +60,7 @@ def determine_mods_used(replay: osrparse.Replay) -> dict[str, bool]:
     for mod, is_turned_on in mods_used.items():
         
         # Ignore NM since we set it to True by default
-        if mod == 'NM': 
-            continue
+        if mod == 'NM': continue
         
         # If it's not one of those mods but it's turned on, then the replay doesn't count as NoMod
         if mod not in ['ScoreV2', 'NF', 'SD', 'PF'] and is_turned_on:
@@ -74,14 +73,13 @@ async def replay_has_illegal_mods(channel: discord.abc.Messageable, mods_used: d
     """Check if replay uses a mod that is unsupported. Return True if yes, False otherwise."""
     
     # Cycle through all entries in the mods_used dict
-    for mod, is_turned_on in mods_used.items():
+    for mod, is_active in mods_used.items():
         
         # No need to do anything if the replay uses a mod that's accepted
-        if mod in ALLOWED_REPLAY_MODS or mod == 'NM':
-            continue
+        if mod in ALLOWED_REPLAY_MODS or mod == 'NM': continue
         
         # If it's not an accepted mod, we'll check whether it's turned on
-        if is_turned_on == True:
+        if is_active == True:
             
             # If it's turned on, we'll send a message
             new_message = "Only the following mods are supported: "
@@ -111,15 +109,15 @@ async def replay_is_a_convert(channel: discord.abc.Messageable, beatmap: ossapi.
 async def replay_is_outdated(channel: discord.abc.Messageable, replay: osrparse.Replay) -> bool:
     """Check if replay was made in the last 24 hours. Return True if yes, False otherwise."""
     
-    time_difference = datetime.datetime.now(datetime.timezone.utc) - replay.timestamp  # now() doesn't have timezone info, so we need to add it
+    replay_age = datetime.datetime.now(datetime.timezone.utc) - replay.timestamp  # now() doesn't have timezone info, so we need to add it
     one_day = datetime.timedelta(days=1)
     
-    if time_difference >= one_day:
+    if replay_age >= one_day:
         await channel.send("Replay must be made within the last 24 hours!")
         return True
     return False
 
-async def replay_made_by_user(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id_in_replay: int, discord_id: int) -> bool:
+async def replay_is_made_by_user(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id_in_replay: int, discord_id: int) -> bool:
     """Check if replay was made by the user. Return True if yes, False otherwise."""
  
     cursor = await conn.cursor()
@@ -137,8 +135,8 @@ async def replay_made_by_user(conn: aiosqlite.Connection, channel: discord.abc.M
         return False
     return True
 
-async def replay_already_submitted(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id: int, 
-                                   beatmap: ossapi.Beatmap, beatmapset: ossapi.Beatmapset, replay: osrparse.Replay) -> bool:
+async def replay_is_already_submitted(conn: aiosqlite.Connection, channel: discord.abc.Messageable, osu_id: int, 
+                                    beatmap: ossapi.Beatmap, beatmapset: ossapi.Beatmapset, replay: osrparse.Replay) -> bool:
     """Check if replay has already been submitted by the user (ie in the replay database). Return True if yes, False otherwise."""
     
     cursor = await conn.cursor()
@@ -146,10 +144,10 @@ async def replay_already_submitted(conn: aiosqlite.Connection, channel: discord.
     # See if the replay database contains a row with the exact same information as the submitted replay
     query = "SELECT * FROM submitted_replays WHERE osu_id=? AND beatmap_id=? AND beatmapset_id=? AND timestamp=?"
     await cursor.execute(query, (osu_id, beatmap.id, beatmapset.id, replay.timestamp))
-    data = await cursor.fetchone()
+    replay_in_database = await cursor.fetchone()
     
     # If there is, that means the replay has already been submitted
-    if data is not None:
+    if replay_in_database:
         await channel.send("You already submitted this replay!")
         return True
     return False
@@ -161,17 +159,17 @@ def calculate_total_exp_gained(replay: osrparse.Replay, beatmap: ossapi.Beatmap)
     total_exp_gained = int(total_exp_gained)
     return total_exp_gained
 
-def create_exp_dict() -> dict[str, int]:
+def create_exp_bars_dict() -> dict[str, int]:
     """Returns a dict with all exp bars as keys, with their values set to 0."""
     
     # Initialize the dict
-    exp_dict: dict[str, int] = {} 
+    exp_bars_dict: dict[str, int] = {} 
     
     # Add all exp bars
     for exp_bar_name in EXP_BAR_NAMES:
-        exp_dict[exp_bar_name] = 0
+        exp_bars_dict[exp_bar_name] = 0
     
-    return exp_dict
+    return exp_bars_dict
     
 def calculate_mod_exp_gained(total_exp_gained: int, exp_gained: dict[str, int], mods_used: dict[str, bool]):
     """
@@ -189,7 +187,7 @@ def calculate_mod_exp_gained(total_exp_gained: int, exp_gained: dict[str, int], 
         return
     
     # Otherwise, count the number of relevant mods activated
-    num_mods_activated: int = 0
+    num_exp_bar_mods_activated: int = 0
     
     for exp_bar_name in EXP_BAR_NAMES:
         
@@ -197,7 +195,7 @@ def calculate_mod_exp_gained(total_exp_gained: int, exp_gained: dict[str, int], 
         
         # If a relevant mod is activated, increment the count
         if mods_used[exp_bar_name] == True:
-            num_mods_activated += 1
+            num_exp_bar_mods_activated += 1
     
     # Then evenly allocate the exp to the exp bars with their respective mods activated
     for exp_bar_name in EXP_BAR_NAMES:
@@ -205,34 +203,34 @@ def calculate_mod_exp_gained(total_exp_gained: int, exp_gained: dict[str, int], 
         if exp_bar_name == 'Overall': continue
 
         if mods_used[exp_bar_name] == True:
-            exp_gained[exp_bar_name] = total_exp_gained // num_mods_activated
+            exp_gained[exp_bar_name] = total_exp_gained // num_exp_bar_mods_activated
             
 def calculate_level_information(total_exp: int, return_level_only: bool = False) -> int | tuple[int, int, int]:
     """
-    Given the total exp for a particular mod, calculate and return the level, progress towards the next level, and the exp required for the next level.
+    Given the total exp for a particular mod, calculate and return the current level, progress towards the next level, and the exp required for the next level.
     If <return_level_only> is True, only return the level.
     
     Current formula:
     You start at level 1 with 0 xp. Level 2 requires 50 exp. Level 3 requires 100 MORE exp. And so on.
     """
 
-    level = 1
-    exp_required = 50   # EXP required for the next level
+    current_level = 1
+    exp_required_for_next_level = 50
     
     # From the total exp, deduct the exp required for each subsequent level
-    while total_exp >= exp_required:
-        level += 1
-        total_exp -= exp_required
-        exp_required += 50
+    while total_exp >= exp_required_for_next_level:
+        current_level += 1
+        total_exp -= exp_required_for_next_level
+        exp_required_for_next_level += 50
         
-    progress_to_next_lv = total_exp  # Renamed for clarity
+    progress_to_next_level = total_exp
     
     if return_level_only == True:
-        return level
-    return level, progress_to_next_lv, exp_required            
+        return current_level
+    return current_level, progress_to_next_level, exp_required_for_next_level            
 
 async def update_user_exp_and_levels_in_database(conn: aiosqlite.Connection, osu_id: int, exp_gained: dict[str, int]):
-    """Update user's exp in the database."""
+    """Update user's exp and levels in the database."""
     
     cursor = await conn.cursor()
     
@@ -275,26 +273,22 @@ def get_mod_list(mods_used: dict[str, bool]) -> str:
     mod_list: str = ""
 
     # Loop through all possible mods
-    for key, value in mods_used.items():
+    for mod, is_active in mods_used.items():
         
         # If that mod is not active, ignore it
-        if value == False:
-            continue
+        if not is_active: continue
         
         # We check for NoMod later, since NoMod can be active alongside other mods like ScoreV2 and NF
-        if key == 'NM':
-            continue
+        if mod == 'NM': continue
         
         # If SD is active AND PF is active, don't display SD
-        if key == 'SD' and mods_used['PF'] == True:
-            continue
+        if mod == 'SD' and mods_used['PF'] == True: continue
         
         # If DT is active AND NC is active, don't display DT
-        if key == 'DT' and mods_used['NC'] == True:
-            continue
+        if mod == 'DT' and mods_used['NC'] == True: continue
         
         # Otherwise just add the active mod to the list
-        mod_list += (f"{key} ")
+        mod_list += (f"{mod} ")
     
     # If the mod list is empty, it means that the replay is NoMod
     if mod_list == "":
@@ -338,15 +332,15 @@ async def add_updated_user_exp_to_embed(conn: aiosqlite.Connection, embed: disco
     }
     
     # Loop through all exp bars
-    for mod_name in EXP_BAR_NAMES:
+    for mod in EXP_BAR_NAMES:
         
         # Only display the mod exp if you gained exp for it
-        if exp_gained[mod_name] != 0:
-            level, progress_to_next_lv, exp_required = calculate_level_information(total_exp[mod_name])  # type: ignore
+        if exp_gained[mod] != 0:
+            current_level, progress_to_next_level, exp_required_for_next_level = calculate_level_information(total_exp[mod])  # type: ignore
             
             # Add mod exp information to the embed
-            name = f"{mod_name} Level {level}:\n"
-            value = f"{progress_to_next_lv} / {exp_required} **(+{exp_gained[mod_name]})**\n"  # [Progress to next level in exp / Required exp for next level]
+            name = f"{mod} Level {current_level}:\n"
+            value = f"{progress_to_next_level} / {exp_required_for_next_level} **(+{exp_gained[mod]})**\n"  # [Progress to next level in exp / Required exp for next level]
             embed.add_field(name=name, value=value)
             
 async def add_replay_to_database(conn: aiosqlite.Connection, osu_id: int, beatmap: ossapi.Beatmap, beatmapset: ossapi.Beatmapset, replay: osrparse.Replay):
@@ -383,8 +377,7 @@ class GameCog(commands.Cog):
                 
                 # Skip attachment if it's not a replay (doesn't contain ".osr" at the end)
                 # https://regex-vis.com/?r=.*%3F%5C.osr
-                if re.match(r".*?\.osr", attachment.filename) is None:
-                    continue
+                if re.match(r".*?\.osr", attachment.filename) is None: continue
                 
                 # Replays shouldn't be larger than 1MB, a full run-through of The Unforgiving is about ~800KB
                 # Also prevents people from spamming big files to kill my PC
@@ -437,15 +430,15 @@ class GameCog(commands.Cog):
                 if (await replay_has_illegal_mods(channel, mods_used)
                 or await replay_is_a_convert(channel, beatmap)
                 or await replay_is_outdated(channel, replay)
-                or await replay_already_submitted(conn, channel, osu_id, beatmap, beatmapset, replay)
+                or await replay_is_already_submitted(conn, channel, osu_id, beatmap, beatmapset, replay)
                 or not await replay_is_taiko(channel, replay)
-                or not await replay_made_by_user(conn, channel, osu_id, discord_id)):
+                or not await replay_is_made_by_user(conn, channel, osu_id, discord_id)):
                     continue
 
                 # Calculate exp gained for each mod
                 # If there is more than one mod active, exp is evenly split between them
                 total_exp_gained = calculate_total_exp_gained(replay, beatmap)
-                exp_gained = create_exp_dict()
+                exp_gained = create_exp_bars_dict()
                 calculate_mod_exp_gained(total_exp_gained, exp_gained, mods_used)
                 
                 # Edit the database
@@ -499,7 +492,7 @@ class GameCog(commands.Cog):
             await cursor.execute("SELECT overall_exp, nm_exp, hd_exp, hr_exp FROM exp_table WHERE osu_username=?", (username,))
             data = await cursor.fetchone()
             
-            total_exp = create_exp_dict()
+            total_exp = create_exp_bars_dict()
         
             assert data is not None
             total_exp['Overall'] = data[0]
@@ -511,7 +504,7 @@ class GameCog(commands.Cog):
             await cursor.execute("SELECT overall_level, nm_level, hd_level, hr_level FROM exp_table WHERE osu_username=?", (username,))
             data = await cursor.fetchone()
             
-            level = create_exp_dict()
+            level = create_exp_bars_dict()
             
             assert data is not None
             level['Overall'] = data[0]
@@ -526,12 +519,12 @@ class GameCog(commands.Cog):
         for mod_name in EXP_BAR_NAMES:  # Combine the "Overall" word with the relevant mods list
             
             # Calculate relevant display information
-            level, progress_to_next_lv, exp_required = calculate_level_information(total_exp[mod_name])  # type: ignore
-            progress_in_percentage: float = (progress_to_next_lv / exp_required) * 100
+            current_level, progress_to_next_level, exp_required_for_next_level = calculate_level_information(total_exp[mod_name])  # type: ignore
+            progress_in_percentage: float = (progress_to_next_level / exp_required_for_next_level) * 100
             
             # Add exp information for that mod to the embed
-            name_info = f"{mod_name} Level {level}:\n"
-            value_info = f"{progress_to_next_lv} / {exp_required} ({progress_in_percentage:.2f}%)\n"  # Progress to next level in exp / Required exp for next level
+            name_info = f"{mod_name} Level {current_level}:\n"
+            value_info = f"{progress_to_next_level} / {exp_required_for_next_level} ({progress_in_percentage:.2f}%)\n"  # Progress to next level in exp / Required exp for next level
             
             # We want the overall exp to be in its own separate line
             if mod_name == "Overall":
