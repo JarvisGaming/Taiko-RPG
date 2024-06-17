@@ -110,9 +110,9 @@ async def replay_is_outdated(channel: discord.abc.Messageable, replay: osrparse.
     """Check if replay was made in the last 24 hours. Return True if yes, False otherwise."""
     
     replay_age = datetime.datetime.now(datetime.timezone.utc) - replay.timestamp  # now() doesn't have timezone info, so we need to add it
-    one_day = datetime.timedelta(days=1)
+    twenty_four_hours = datetime.timedelta(hours=24)
     
-    if replay_age >= one_day:
+    if replay_age >= twenty_four_hours:
         await channel.send("Replay must be made within the last 24 hours!")
         return True
     return False
@@ -480,7 +480,7 @@ class GameCog(commands.Cog):
                 assert data is not None
                 username = data[0]
             
-            # Otherwise, check if the user exists in the database
+            # Otherwise, check if the username exists in the database
             else:
                 await cursor.execute("SELECT 1 FROM exp_table WHERE osu_username=?", (username,))
                 data = await cursor.fetchone()

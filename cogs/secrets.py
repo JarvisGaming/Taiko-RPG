@@ -13,23 +13,22 @@ class SecretsCog(commands.Cog):
         self.bot = bot
     
     @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: discord.Emoji, user: discord.User):
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         """Sends a message when someone reacts with the middle finger emoji to a bot message."""
         
-        if reaction.message.author.id != BOT_ID:  # type: ignore
+        if reaction.message.author.id != BOT_ID:
             return
             
         if str(reaction) == "🖕":
-            channel = reaction.message.channel  # type: ignore
-            await channel.send(f"{user.mention} 🖕🖕🖕")
+            await reaction.message.channel.send(f"{user.mention} 🖕🖕🖕")
     
     @commands.Cog.listener(name="on_message")
     async def wysi(self, message: discord.Message):
         """Sends a message when a new message contains the number 727: https://knowyourmeme.com/memes/727-wysi"""
         
-        # Bot may send messages with 727 in them (eg score)
-        if message.author.id == BOT_ID:
-            return
+        # Bot may send messages with 727 in them (eg score), so we want to ignore that (but what happens if we don't lol)
+        # if message.author.id == BOT_ID:
+        #     return
         
         # Removes the <@xxx> part(s) in the message, which are pings
         # https://regex-vis.com/?r=%3C%40%5B0-9%5D%2B%3F%3E

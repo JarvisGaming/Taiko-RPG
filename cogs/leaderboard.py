@@ -65,14 +65,14 @@ async def add_user_to_leaderboard(interaction: discord.Interaction, cursor: aios
 def change_embed_colour_based_on_mod(embed: discord.Embed, leaderboard_type: Choice[str]):
     """Change the embed's colour based on the mod."""
     
-    match leaderboard_type.name:
-        case "Overall":
+    match leaderboard_type.value:
+        case "overall":
             embed.colour = discord.Color.blurple()
-        case "NoMod":
+        case "nm":
             embed.colour = discord.Color.from_rgb(255, 255, 255)    # White
-        case "HD":
+        case "hd":
             embed.colour = discord.Color.from_rgb(238, 241, 8)      # Yellow
-        case "HR":
+        case "hr":
             embed.colour = discord.Color.from_rgb(244, 18, 18)      # Red
 
 class LeaderboardCog(commands.Cog):

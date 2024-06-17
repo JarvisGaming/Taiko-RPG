@@ -3,8 +3,8 @@ import sys
 from other.global_constants import *
 from other.utility import *
 
-async def load_extensions():
-    """Load bot commands and other functions stored in the cogs folder."""
+async def load_all_cogs():
+    """Load bot commands stored in the cogs folder."""
 
     for filename in os.listdir("./cogs"):
         if filename.endswith(".py"):
@@ -18,16 +18,14 @@ async def on_ready():
     """Sets up the bot on startup."""
     
     await send_in_all_channels("Bot is now ready")
-    # The bot's activity status is set in the commands.Bot class constructor,
-    # as it can cause crashes when put here.
 
 @bot.event
 async def setup_hook():
     """This is run once when the bot starts."""
     
-    await load_extensions()         # Loads all cogs
-    await bot.tree.sync()           # Syncs slash commands
-    clean_replay_database.start()   # Starts the looping task to regularly clean replay database
+    await load_all_cogs()
+    await bot.tree.sync()  # Syncs slash commands
+    regularly_clean_replay_database.start()
 
 
 sys.stderr = open("./logs.log", "w")  # Redirect stderr to log file

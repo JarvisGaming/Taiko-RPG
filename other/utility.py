@@ -8,14 +8,14 @@ from other.global_constants import *
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 
 @tasks.loop(hours=1)
-async def clean_replay_database():
+async def regularly_clean_replay_database():
     """Removes outdated replays from the replay database at regular intervals. Active when bot starts."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
         # Deletes replays older than 24 hours
-        await cursor.execute("DELETE FROM submitted_replays WHERE timestamp <= datetime('now', '-1 days')")
+        await cursor.execute("DELETE FROM submitted_replays WHERE timestamp <= datetime('now', '-24 hours')")
         await conn.commit()
 
 def is_admin():
@@ -50,10 +50,10 @@ def is_verified():
             
             # Tries to find the user in the database
             await cursor.execute("SELECT 1 FROM exp_table WHERE discord_id=?", (interaction.user.id,))
-            data = await cursor.fetchone()
+            user = await cursor.fetchone()
 
         # If the user isn't in the database, they aren't verified
-        if data is None:
+        if user is None:
             await interaction.response.send_message("You aren't verified yet. Do /verify <profile link> to get started!")
             return False
         return True
