@@ -398,13 +398,12 @@ class GameCog(commands.Cog):
                 try:
                     file = open(pathname, "rb")  # Replay must be read in binary
                     replay = osrparse.Replay.from_file(file)
-                    file.close()
-                    os.remove(pathname)  # Delete the file
                 except Exception as error:
-                    file.close()         # Repeated, otherwise file won't be deleted
-                    os.remove(pathname)  # Repeated, otherwise file won't be deleted
                     await channel.send(f"Failed to parse replay: {error}")
                     continue
+                finally:
+                    file.close()
+                    os.remove(pathname)  # Delete the file
                 
                 # Retrieve beatmap information
                 try:
