@@ -68,5 +68,5 @@ class VerificationCog(commands.Cog):
         
         await interaction.response.send_message("Verification successful! Use the `/help` command to see where to start!")
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(VerificationCog(bot))

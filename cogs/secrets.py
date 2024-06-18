@@ -39,5 +39,5 @@ class SecretsCog(commands.Cog):
             await channel.send("WHEN YOU SEE IT")
         
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(SecretsCog(bot))
