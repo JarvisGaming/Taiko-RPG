@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="./data/sensitive.env", verbose=True)
 
-BOT_TOKEN: str = os.environ["BOT_TOKEN"]
-BOT_ID: int = int(os.environ["BOT_ID"])
-OSU_CLIENT_SECRET: str = os.environ["OSU_CLIENT_SECRET"]
-OSU_CLIENT_ID: int = int(os.environ["OSU_CLIENT_ID"])
-OSU_API_KEY: str = os.environ["OSU_API_KEY"]  # Legacy API
+BOT_TOKEN: str = os.environ['BOT_TOKEN']
+BOT_ID: int = int(os.environ['BOT_ID'])
+OSU_CLIENT_SECRET: str = os.environ['OSU_CLIENT_SECRET']
+OSU_CLIENT_ID: int = int(os.environ['OSU_CLIENT_ID'])
+OSU_API_KEY: str = os.environ['OSU_API_KEY']  # Legacy API
 
 ADMIN_ID_LIST: list[int] = [208433054572740608]  # jarvisgaming
 
