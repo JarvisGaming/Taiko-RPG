@@ -13,8 +13,6 @@ OSU_CLIENT_SECRET: str = os.environ["OSU_CLIENT_SECRET"]
 OSU_CLIENT_ID: int = int(os.environ["OSU_CLIENT_ID"])
 OSU_API_KEY: str = os.environ["OSU_API_KEY"]  # Legacy API
 
-JARVIS_ID = 208433054572740608  # (That's me!)
-
 ADMIN_ID_LIST: list[int] = [208433054572740608]  # jarvisgaming
 
 ALLOWED_REPLAY_MODS: list[str] = ['NF', 'EZ', 'HD', 'HR', 'FL', 'SD', 'PF', 'ScoreV2']
