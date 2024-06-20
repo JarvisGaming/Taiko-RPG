@@ -15,7 +15,7 @@ OSU_API_KEY: str = os.environ['OSU_API_KEY']  # Legacy API
 
 ADMIN_ID_LIST: list[int] = [208433054572740608]  # jarvisgaming
 
-ALLOWED_MODS: list[str] = ['NF', 'EZ', 'HD', 'HR', 'FL', 'SD', 'PF', 'ScoreV2']
+ALLOWED_MODS: list[str] = ['NF', 'EZ', 'HD', 'HR', 'FL', 'SD', 'PF', 'ScoreV2', 'CL', 'AC', 'SG', 'MU']  # DT+NC, HT+DC
 EXP_BAR_NAMES: list[str] = ['Overall', 'NM', 'HD', 'HR']
 
 osu_api = OssapiAsync(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
