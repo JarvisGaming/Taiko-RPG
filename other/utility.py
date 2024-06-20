@@ -1,11 +1,12 @@
 import datetime
-import aiosqlite
 from contextlib import closing
-from discord.ext import commands, tasks
-from discord import app_commands
 
-from other.global_constants import *
+import aiosqlite
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
+from discord import app_commands
+from discord.ext import commands, tasks
+from other.global_constants import *
+
 
 @tasks.loop(hours=1)
 async def regularly_clean_replay_database():
@@ -96,3 +97,24 @@ def create_str_of_allowed_replay_mods() -> str:
         new_message += f"{mod} "
     
     return new_message.strip()  # Removes trailing space
+
+async def get_osu_username_from_discord_id(discord_id: int) -> str | None:
+    async with aiosqlite.connect("./data/database.db") as conn:
+        cursor = await conn.cursor()
+        
+        await cursor.execute("SELECT osu_username FROM exp_table WHERE discord_id=?", (discord_id,))
+        data = await cursor.fetchone()
+        
+        if data is not None:
+            return data[0]
+        return None
+
+async def get_discord_id_from_osu_id(osu_id: int) -> int:
+    async with aiosqlite.connect("./data/database.db") as conn:
+        cursor = await conn.cursor()
+        
+        await cursor.execute("SELECT discord_id FROM exp_table WHERE osu_id=?", (osu_id,))
+        data = await cursor.fetchone()
+        
+        assert data is not None
+        return data[0]
