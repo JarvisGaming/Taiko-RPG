@@ -1,11 +1,11 @@
-import discord
-from ossapi import OssapiAsync
-from discord.ext import commands
-
 import os
-from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="./data/sensitive.env", verbose=True)
+import discord
+from discord.ext import commands
+from dotenv import load_dotenv
+from ossapi import OssapiAsync
+
+load_dotenv(dotenv_path="./data/sensitive.env", verbose=True)  # This line applies to the whole process, not just the current script
 
 BOT_TOKEN: str = os.environ['BOT_TOKEN']
 BOT_ID: int = int(os.environ['BOT_ID'])

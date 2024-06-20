@@ -1,10 +1,11 @@
-import discord
 import inspect
+
+import discord
 from discord import app_commands
 from discord.ext import commands
-
 from other.global_constants import *
 from other.utility import create_str_of_allowed_replay_mods
+
 
 class MiscCog(commands.Cog):
     def __init__(self, bot):

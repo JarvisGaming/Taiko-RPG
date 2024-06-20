@@ -1,17 +1,17 @@
-import discord
-from discord import app_commands
-
-import osrparse
-import ossapi
 import datetime
 import math
-import uuid  # Generate random file names
 import re
-import datetime
-from discord.ext import commands
+import uuid  # Generate random file names
 
+import discord
+import osrparse
+import ossapi
+from discord import app_commands
+from discord.ext import commands
 from other.global_constants import *
 from other.utility import *
+
+
 
 async def user_is_verified(conn: aiosqlite.Connection, channel: discord.abc.Messageable, discord_id: int) -> bool:
     """Checks if user is verified. Return True if yes, False otherwise."""

@@ -1,12 +1,11 @@
-import discord
-from discord import app_commands
-
-from ossapi import UserLookupKey
-from discord.ext import commands
-
 import re
 
+import discord
+from discord import app_commands
+from discord.ext import commands
+from ossapi import UserLookupKey
 from other.global_constants import *
+
 
 class SecretsCog(commands.Cog):
     def __init__(self, bot):

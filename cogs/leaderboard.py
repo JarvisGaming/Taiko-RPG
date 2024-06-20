@@ -1,9 +1,9 @@
-from discord.ext import commands
 from discord import app_commands
 from discord.app_commands import Choice
-
+from discord.ext import commands
 from other.global_constants import *
 from other.utility import *
+
 
 def add_one_row_to_leaderboard(embed: discord.Embed, row):
     """Helper function. Given a row containing a user's rank, username, level, and exp, adds it to the leaderboard."""

@@ -1,7 +1,9 @@
 import os
 import sys
+
 from other.global_constants import *
 from other.utility import *
+
 
 async def load_all_cogs():
     """Load bot commands stored in the cogs folder."""

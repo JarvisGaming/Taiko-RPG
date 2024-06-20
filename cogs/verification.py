@@ -1,12 +1,12 @@
-from ossapi import UserLookupKey
-from discord.ext import commands
-from discord import app_commands
-
-import re
 import inspect
+import re
 
+from discord import app_commands
+from discord.ext import commands
+from ossapi import UserLookupKey
 from other.global_constants import *
 from other.utility import *
+
 
 class VerificationCog(commands.Cog):
     def __init__(self, bot):
