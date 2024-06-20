@@ -93,7 +93,7 @@ def create_str_of_allowed_replay_mods() -> str:
     new_message = ""
     
     # Adds all allowed mods to the message
-    for mod in ALLOWED_REPLAY_MODS:
+    for mod in ALLOWED_MODS:
         new_message += f"{mod} "
     
     return new_message.strip()  # Removes trailing space
