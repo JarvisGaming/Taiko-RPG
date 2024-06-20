@@ -12,7 +12,6 @@ from other.global_constants import *
 from other.utility import *
 
 
-
 async def user_is_verified(conn: aiosqlite.Connection, channel: discord.abc.Messageable, discord_id: int) -> bool:
     """Checks if user is verified. Return True if yes, False otherwise."""
     
@@ -76,7 +75,7 @@ async def replay_has_illegal_mods(channel: discord.abc.Messageable, mods_used: d
     for mod, is_active in mods_used.items():
         
         # No need to do anything if the replay uses a mod that's accepted
-        if mod in ALLOWED_REPLAY_MODS or mod == 'NM': continue
+        if mod in ALLOWED_MODS or mod == 'NM': continue
         
         # If it's not an accepted mod, we'll check whether it's turned on
         if is_active == True:
