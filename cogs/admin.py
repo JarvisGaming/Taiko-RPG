@@ -22,6 +22,7 @@ class AdminCog(commands.Cog):
             await asyncio.sleep(seconds_to_wait_before_shutdown)  # type: ignore
         
         await send_in_all_channels("Shutting down...")
+        await http_session.close_http_session()
         await bot.close()
     
     @commands.command()
