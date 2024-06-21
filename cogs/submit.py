@@ -69,6 +69,10 @@ class SubmitCog(commands.Cog):
             
             for score_info in parsed_response:
                 score = Score(score_info, interaction.user.id)
+                
+                if not await self.score_is_valid(webhook, score):
+                    return
+        
                 self.write_one_score_to_debug_file(file, score)
                 await self.process_one_score(webhook, score)
                 await self.display_one_score(webhook, score)
@@ -106,9 +110,6 @@ class SubmitCog(commands.Cog):
         file.write("\n\n\n\n\n")
 
     async def process_one_score(self, webhook: discord.Webhook, score: Score):
-        
-        if not await self.score_is_valid(webhook, score):
-            return
         
         async with aiosqlite.connect("./data/database.db") as conn:
             # Edit the database
