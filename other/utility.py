@@ -18,10 +18,6 @@ async def regularly_clean_replay_database():
         await cursor.execute("DELETE FROM submitted_replays WHERE timestamp <= datetime('now', '-24 hours')")
         await conn.commit()
 
-async def start_http_connection():
-    global http_session
-    http_session = aiohttp.ClientSession()
-
 @tasks.loop(hours=6)
 async def regularly_refresh_access_token():
     """https://osu.ppy.sh/docs/index.html#using-the-access-token-to-access-the-api"""
@@ -37,9 +33,13 @@ async def regularly_refresh_access_token():
         'scope': "public",
     }
     
+    http_session = aiohttp.ClientSession()
+    
     async with http_session.post("https://osu.ppy.sh/oauth/token", headers=headers, data=data) as resp:
         json_file = await resp.json()
         dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])
+        
+    await http_session.close()
 
 def is_admin():
     """

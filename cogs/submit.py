@@ -19,6 +19,8 @@ class SubmitCog(commands.Cog):
     @is_verified()
     async def submit(self, interaction: discord.Interaction, number_of_scores_to_submit: int = 10000):
 
+        http_session = aiohttp.ClientSession()
+        
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
