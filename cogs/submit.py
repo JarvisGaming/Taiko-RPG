@@ -14,27 +14,6 @@ from other.global_constants import *
 from other.utility import *
 
 
-async def refresh_access_token(session: aiohttp.ClientSession):
-    """
-    should be turned into a looping task on startup
-    https://osu.ppy.sh/docs/index.html#using-the-access-token-to-access-the-api
-    """
-
-    headers = {
-        'Accept': "application/json",
-        'Content-Type': "application/x-www-form-urlencoded",
-    }
-    data = {
-        'client_id': OSU_CLIENT_ID,
-        'client_secret': OSU_CLIENT_SECRET,
-        'grant_type': "client_credentials",
-        'scope': "public",
-    }
-    
-    async with session.post("https://osu.ppy.sh/oauth/token", headers=headers, data=data) as resp:
-        json_file = await resp.json()
-        dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])
-
 class SubmitCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -43,10 +22,7 @@ class SubmitCog(commands.Cog):
     @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit. Leave blank to submit all.")
     @is_verified()
     async def submit(self, interaction: discord.Interaction, number_of_scores_to_submit: int = 10000):
-        
-        session = aiohttp.ClientSession()
-        await refresh_access_token(session)
-        
+
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
@@ -57,7 +33,7 @@ class SubmitCog(commands.Cog):
         user_osu_id = await get_osu_id_from_discord_id(interaction.user.id)
         url = f"https://osu.ppy.sh/api/v2/users/{user_osu_id}/scores/recent?include_fails=1&mode=taiko&limit={number_of_scores_to_submit}"
         
-        async with session.get(url, headers=headers) as resp:
+        async with http_session.get(url, headers=headers) as resp:
             parsed_response = await resp.json()
             webhook = interaction.followup  # We can use webhook.send to send followup messages
             file = open("./data/scores.txt", "w")
@@ -71,17 +47,17 @@ class SubmitCog(commands.Cog):
                 score = Score(score_info, interaction.user.id)
                 
                 if not await self.score_is_valid(webhook, score):
-                    return
+                    continue
         
                 self.write_one_score_to_debug_file(file, score)
-                await self.process_one_score(webhook, score)
+                await self.process_one_score(score)
                 await self.display_one_score(webhook, score)
             file.close()
             
             # Add total exp gained after all submissions
             await webhook.send("All done!")
             
-        await session.close()
+        await http_session.close()
 
     def write_one_score_to_debug_file(self, file: typing.TextIO, score: Score):
         file.write(f"OVERALL:\n")
@@ -109,7 +85,7 @@ class SubmitCog(commands.Cog):
                     
         file.write("\n\n\n\n\n")
 
-    async def process_one_score(self, webhook: discord.Webhook, score: Score):
+    async def process_one_score(self, score: Score):
         
         async with aiosqlite.connect("./data/database.db") as conn:
             # Edit the database
