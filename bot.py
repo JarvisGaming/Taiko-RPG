@@ -27,6 +27,7 @@ async def setup_hook():
     
     await load_all_cogs()
     await bot.tree.sync()  # Syncs slash commands
+    await start_http_connection()
     regularly_clean_replay_database.start()
     regularly_refresh_access_token.start()
 
