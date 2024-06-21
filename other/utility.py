@@ -1,4 +1,5 @@
 import aiosqlite
+import dotenv
 from classes.exp_bar import ExpBar
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
@@ -16,6 +17,25 @@ async def regularly_clean_replay_database():
         # Deletes replays older than 24 hours
         await cursor.execute("DELETE FROM submitted_replays WHERE timestamp <= datetime('now', '-24 hours')")
         await conn.commit()
+
+@tasks.loop(minutes=1)
+async def regularly_refresh_access_token():
+    """https://osu.ppy.sh/docs/index.html#using-the-access-token-to-access-the-api"""
+
+    headers = {
+        'Accept': "application/json",
+        'Content-Type': "application/x-www-form-urlencoded",
+    }
+    data = {
+        'client_id': OSU_CLIENT_ID,
+        'client_secret': OSU_CLIENT_SECRET,
+        'grant_type': "client_credentials",
+        'scope': "public",
+    }
+    
+    async with http_session.post("https://osu.ppy.sh/oauth/token", headers=headers, data=data) as resp:
+        json_file = await resp.json()
+        dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])
 
 def is_admin():
     """

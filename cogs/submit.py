@@ -1,14 +1,10 @@
-import datetime
 import os
 import typing
 
-import aiohttp
 import aiosqlite
 import discord
-import dotenv
 from classes.score import Score
 from discord import app_commands
-from discord.app_commands import Choice
 from discord.ext import commands
 from other.global_constants import *
 from other.utility import *

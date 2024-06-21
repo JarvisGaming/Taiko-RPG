@@ -28,6 +28,7 @@ async def setup_hook():
     await load_all_cogs()
     await bot.tree.sync()  # Syncs slash commands
     regularly_clean_replay_database.start()
+    regularly_refresh_access_token.start()
 
 
 sys.stderr = open("./logs.log", "w")  # Redirect stderr to log file
