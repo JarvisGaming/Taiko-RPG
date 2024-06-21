@@ -1,7 +1,5 @@
-import datetime
-from contextlib import closing
-
 import aiosqlite
+from classes.exp_bar import ExpBar
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -98,23 +96,47 @@ def create_str_of_allowed_replay_mods() -> str:
     
     return new_message.strip()  # Removes trailing space
 
-async def get_osu_username_from_discord_id(discord_id: int) -> str | None:
+async def get_osu_id_from_discord_id(discord_id: int) -> int | None:
+    """Returns None if not found in database."""
+    
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
-        await cursor.execute("SELECT osu_username FROM exp_table WHERE discord_id=?", (discord_id,))
+        await cursor.execute("SELECT osu_id FROM exp_table WHERE discord_id=?", (discord_id,))
         data = await cursor.fetchone()
         
         if data is not None:
             return data[0]
         return None
 
-async def get_discord_id_from_osu_id(osu_id: int) -> int:
+async def get_discord_id_from_osu_id(osu_id: int) -> int | None:
+    """Returns None if not found in database."""
+    
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
         await cursor.execute("SELECT discord_id FROM exp_table WHERE osu_id=?", (osu_id,))
         data = await cursor.fetchone()
         
-        assert data is not None
-        return data[0]
+        if data is not None:
+            return data[0]
+        return None
+    
+async def get_user_exp_bars(discord_id: int) -> dict[str, ExpBar]:
+    
+    user_exp_bars = {}
+    
+    async with aiosqlite.connect("./data/database.db") as conn:
+        cursor = await conn.cursor()
+        
+        for exp_bar_name in EXP_BAR_NAMES:
+            await cursor.execute(f"SELECT {exp_bar_name.lower()}_exp FROM exp_table WHERE discord_id=?", (discord_id,))
+            data = await cursor.fetchone()
+            
+            assert data is not None
+            total_exp = data[0]
+            
+            exp_bar = ExpBar(total_exp)
+            user_exp_bars[exp_bar_name] = exp_bar
+    
+    return user_exp_bars
