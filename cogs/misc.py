@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from other.global_constants import *
-from other.utility import create_str_of_allowed_replay_mods
+from other.utility import create_str_of_allowed_mods
 
 
 class MiscCog(commands.Cog):
@@ -19,20 +19,14 @@ class MiscCog(commands.Cog):
         embed.add_field(name="1. Verify yourself", value="Use `/verify <profile link>` to get started!", inline=False)
            
         # Adds all currently accepted mods to the text
-        mod_list = create_str_of_allowed_replay_mods()
+        mod_list = create_str_of_allowed_mods()
         text =  f"""
-                Drag your replays into this channel to submit them!
-                (You can submit multiple at a time!)
-                
-                You get EXP for each replay you submit.
-                The only restrictions for replays are:
-                - Replays have to be made in the last 24 hours
-                - Replays have to be made on submitted maps
-                - Your replay doesn't have to be a pass
-                - Mods that are currently allowed: {mod_list}
+                Use the `/submit` command to submit scores made in the past 24 hours!
+                Note that only the following mods are allowed:
+                {mod_list}
                 """ 
         text = inspect.cleandoc(text)  # Removes weird indentation of doc strings
-        embed.add_field(name="2. Submit replays", value=text, inline=False)
+        embed.add_field(name="2. Submit scores", value=text, inline=False)
         
         embed.add_field(name="3. See your stats", value="Use the `/profile` command to see how much EXP you have!", inline=False)
         embed.add_field(name="4. Check the leaderboards", value="Use the `/leaderboard` command to see where you place on the leaderboard!", inline=False)

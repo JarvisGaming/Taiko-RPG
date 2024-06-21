@@ -27,8 +27,8 @@ class Score:
     mods_human_readable: str
     timestamp: datetime.datetime
     
-    total_score: int  # Lazer score_info, so stable replays are scored w/ classic mod (vs legacy_total_score)
-    max_combo: int  # In the replay, not the map
+    total_score: int  # Lazer score_info, so stable scores are scored w/ classic mod (vs legacy_total_score)
+    max_combo: int  # In the score, not the map
     pp: float | None
     ruleset_id: int  # I don't know what this does
     has_replay: bool
@@ -139,12 +139,12 @@ class Score:
             
             cursor = await conn.cursor()
     
-            # See if the replay database contains a row with the exact same information as the submitted replay
-            query = "SELECT * FROM submitted_replays WHERE osu_id=? AND beatmap_id=? AND beatmapset_id=? AND timestamp=?"
+            # See if the score database contains a row with the exact same information as the submitted score
+            query = "SELECT * FROM submitted_scores WHERE osu_id=? AND beatmap_id=? AND beatmapset_id=? AND timestamp=?"
             await cursor.execute(query, (self.user_osu_id, self.beatmap.id, self.beatmapset.id, self.timestamp))
-            replay_in_database = await cursor.fetchone()
+            score_in_database = await cursor.fetchone()
             
-            # If there is, that means the replay has already been submitted
-            if replay_in_database:
+            # If there is, that means the score has already been submitted
+            if score_in_database:
                 return True
             return False

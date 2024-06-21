@@ -83,7 +83,7 @@ class SubmitCog(commands.Cog):
         
         async with aiosqlite.connect("./data/database.db") as conn:
             # Edit the database
-            await self.add_replay_to_database(conn, score)
+            await self.add_score_to_database(conn, score)
             await self.update_user_exp_bars_in_database(conn, score)
             
             # Commit all database changes
@@ -104,7 +104,7 @@ class SubmitCog(commands.Cog):
             return False
         
         elif score.has_illegal_mods():
-            validation_failed_message += "Score contains disallowed mods. The only allowed mods are: " + create_str_of_allowed_replay_mods()
+            validation_failed_message += "Score contains disallowed mods. The only allowed mods are: " + create_str_of_allowed_mods()
             await webhook.send(validation_failed_message)
             return False
         
@@ -115,8 +115,8 @@ class SubmitCog(commands.Cog):
         
         return True
     
-    async def add_replay_to_database(self, conn: aiosqlite.Connection, score: Score):
-        query = "INSERT INTO submitted_replays VALUES (?, ?, ?, ?)"
+    async def add_score_to_database(self, conn: aiosqlite.Connection, score: Score):
+        query = "INSERT INTO submitted_scores VALUES (?, ?, ?, ?)"
         await conn.execute(query, (score.user_osu_id, score.beatmap.id, score.beatmapset.id, score.timestamp))
     
     async def update_user_exp_bars_in_database(self, conn: aiosqlite.Connection, score: Score):

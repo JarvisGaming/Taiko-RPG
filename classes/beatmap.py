@@ -1,5 +1,6 @@
 from typing import Any
 
+
 class Beatmap:
     id: int
     url: str

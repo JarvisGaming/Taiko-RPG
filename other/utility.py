@@ -8,14 +8,14 @@ from other.global_constants import *
 
 
 @tasks.loop(hours=1)
-async def regularly_clean_replay_database():
-    """Removes outdated replays from the replay database at regular intervals. Active when bot starts."""
+async def regularly_clean_score_database():
+    """Removes outdated scores from the score database at regular intervals. Active when bot starts."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
-        # Deletes replays older than 24 hours
-        await cursor.execute("DELETE FROM submitted_replays WHERE timestamp <= datetime('now', '-24 hours')")
+        # Deletes scores older than 24 hours
+        await cursor.execute("DELETE FROM submitted_scores WHERE timestamp <= datetime('now', '-24 hours')")
         await conn.commit()
 
 @tasks.loop(hours=6)
@@ -108,7 +108,7 @@ async def send_in_all_channels(message: str):
         channel = bot.get_channel(channel_id)
         await channel.send(message)  # type: ignore
         
-def create_str_of_allowed_replay_mods() -> str:
+def create_str_of_allowed_mods() -> str:
     """Creates a string listing all currently accepted mods."""
     
     new_message = ""
