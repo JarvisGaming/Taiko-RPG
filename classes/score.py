@@ -111,6 +111,8 @@ class Score:
         number_of_exp_bar_mods_activated = 0
         
         for mod in self.mods:
+            
+            # There is no mod with the name "Overall" or "NM"
             if mod.acronym in EXP_BAR_NAMES:
                 number_of_exp_bar_mods_activated += 1
                 

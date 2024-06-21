@@ -19,8 +19,6 @@ class SubmitCog(commands.Cog):
     @is_verified()
     async def submit(self, interaction: discord.Interaction, number_of_scores_to_submit: int = 10000):
 
-        http_session = aiohttp.ClientSession()
-        
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
@@ -31,7 +29,7 @@ class SubmitCog(commands.Cog):
         user_osu_id = await get_osu_id_from_discord_id(interaction.user.id)
         url = f"https://osu.ppy.sh/api/v2/users/{user_osu_id}/scores/recent?include_fails=1&mode=taiko&limit={number_of_scores_to_submit}"
         
-        async with http_session.get(url, headers=headers) as resp:
+        async with http_session.conn.get(url, headers=headers) as resp:
             parsed_response = await resp.json()
             webhook = interaction.followup  # We can use webhook.send to send followup messages
             file = open("./data/scores.txt", "w")
@@ -54,8 +52,6 @@ class SubmitCog(commands.Cog):
             
             # Add total exp gained after all submissions
             await webhook.send("All done!")
-            
-        await http_session.close()
 
     def write_one_score_to_debug_file(self, file: typing.TextIO, score: Score):
         file.write(f"OVERALL:\n")
