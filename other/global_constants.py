@@ -1,5 +1,6 @@
 import os
 
+import aiohttp
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -20,3 +21,4 @@ EXP_BAR_NAMES: list[str] = ['Overall', 'NM', 'HD', 'HR']
 
 osu_api = OssapiAsync(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), activity=discord.CustomActivity(name="🥁 banging your mother 🥁"), help_command=None)
+http_session = aiohttp.ClientSession()
