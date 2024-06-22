@@ -25,9 +25,10 @@ class SecretsCog(commands.Cog):
         # https://regex-vis.com/?r=%3A%5Cw%2B%3F%3A
         message_without_pings = re.sub(r":\w+?:", "", message_without_pings)
         
-        if "727" in message_without_pings:
+        if any(word in message_without_pings for word in ["727", "7.27", "72.7"]):
             channel = message.channel
             await channel.send("WHEN YOU SEE IT")
+            return
         
 
 async def setup(bot: commands.Bot):
