@@ -104,8 +104,12 @@ class Score:
         """Calculate the TOTAL exp gained from submitting a score based on a formula."""
         
         total_exp_gained = math.pow(max(3*self.num_300s + 0.75*self.num_100s - 3*self.num_misses, 0), 0.6) * math.pow(min(self.beatmap.sr+1, 11), 1.2) * 0.05
-        total_exp_gained = int(total_exp_gained)
-        return total_exp_gained
+        
+        # Punish incomplete scores according to how much of the map was played
+        if not self.is_complete_runthrough_of_map():
+            total_exp_gained *= math.log(self.map_completion_progress()+1, 2)
+        
+        return int(total_exp_gained)
 
     def __count_number_of_exp_bar_mods_activated(self) -> int:
         number_of_exp_bar_mods_activated = 0
@@ -148,3 +152,14 @@ class Score:
             if score_in_database:
                 return True
             return False
+    
+    def is_complete_runthrough_of_map(self) -> bool:
+        return self.map_completion_progress() == 1.0
+    
+    def map_completion_progress(self) -> float:
+        """
+        Returns a value between 0 and 1 representing the percentage of the map that has been completed before quitting out.
+        1 means that the score is a complete runthrough of the map.
+        """
+        
+        return (self.num_300s + self.num_100s + self.num_misses) / self.beatmap.num_notes

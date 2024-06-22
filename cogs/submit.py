@@ -41,11 +41,11 @@ class SubmitCog(commands.Cog):
             
             for score_info in parsed_response:
                 score = Score(score_info, interaction.user.id)
-                
+                self.write_one_score_to_debug_file(file, score)
+
                 if not await self.score_is_valid(webhook, score):
                     continue
-        
-                self.write_one_score_to_debug_file(file, score)
+                
                 await self.process_one_score(score)
                 await self.display_one_score(webhook, score)
             file.close()
@@ -156,6 +156,10 @@ class SubmitCog(commands.Cog):
     
     async def add_updated_user_exp_to_embed(self, embed: discord.Embed, score: Score):
         user_exp_bars = await get_user_exp_bars(score.user_discord_id)
+        
+        if not score.is_complete_runthrough_of_map():
+            map_completion_percentage = score.map_completion_progress() * 100
+            embed.add_field(name=f"EXP Penalty: Restared / Quit out ({map_completion_percentage:.2f}% completed)", value='', inline=False)
         
         for exp_bar_name, amount_of_exp_gained in score.exp_gained.items():
             if amount_of_exp_gained > 0:
