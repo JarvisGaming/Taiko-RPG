@@ -11,16 +11,6 @@ class SecretsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
-        """Sends a message when someone reacts with the middle finger emoji to a bot message."""
-        
-        if reaction.message.author.id != BOT_ID:
-            return
-            
-        if str(reaction) == "🖕":
-            await reaction.message.channel.send(f"{user.mention} 🖕🖕🖕")
-    
     @commands.Cog.listener(name="on_message")
     async def wysi(self, message: discord.Message):
         """Sends a message when a new message contains the number 727: https://knowyourmeme.com/memes/727-wysi"""
