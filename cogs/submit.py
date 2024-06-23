@@ -40,7 +40,7 @@ class SubmitCog(commands.Cog):
             await interaction.response.send_message(content=message_content)
             
             for score_info in parsed_response:
-                score = Score(score_info, interaction.user.id)
+                score = await Score.create_score_object(score_info)
                 self.write_one_score_to_debug_file(file, score)
 
                 if not await self.score_is_valid(webhook, score):

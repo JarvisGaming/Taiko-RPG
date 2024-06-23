@@ -2,12 +2,14 @@ import datetime
 import math
 from typing import Any
 
+import aiohttp
 import aiosqlite
 import dateutil.parser
 from classes.beatmap import Beatmap
 from classes.beatmapset import Beatmapset
 from classes.mod import Mod
 from other.global_constants import *
+from other.utility import get_discord_id_from_osu_id
 
 
 class Score:
@@ -41,10 +43,12 @@ class Score:
     
     exp_gained: dict[str, int]  # Exp bar names are the keys, amount of exp gained are the values
     
-    def __init__(self, score_info: dict[str, Any], discord_id: int):
+    @classmethod
+    async def create_score_object(cls, score_info: dict[str, Any]):
+        self = cls()
         self.username = score_info['user']['username']
         self.user_osu_id = score_info['user']['id']
-        self.user_discord_id = discord_id
+        self.user_discord_id = await self.__fetch_user_discord_id()
         
         self.score_id = score_info['id']
         self.score_url = f"https://osu.ppy.sh/scores/{self.score_id}"
@@ -67,10 +71,17 @@ class Score:
         self.is_pass = score_info['passed']
         self.is_convert = score_info['beatmap']['convert']
         
-        self.beatmap = Beatmap(score_info['beatmap'])
+        self.beatmap = Beatmap(score_info['beatmap'], await self.__get_sr_after_mods(score_info))
         self.beatmapset = Beatmapset(score_info['beatmapset'])
         
         self.__init_exp_gained()
+        
+        return self
+    
+    async def __fetch_user_discord_id(self) -> int:
+        discord_id = await get_discord_id_from_osu_id(self.user_osu_id)
+        assert discord_id is not None  # You can't send a score without being verified
+        return discord_id
     
     def __create_human_readable_mod_listing(self) -> str:
         """Create a human-readable listing of the mods used."""
@@ -121,6 +132,28 @@ class Score:
                 number_of_exp_bar_mods_activated += 1
                 
         return number_of_exp_bar_mods_activated
+    
+    async def __get_sr_after_mods(self, score_info: dict[str, Any]) -> float:
+        headers = {
+            'Accept': "application/json",
+            'Content-Type': "application/json",
+            'Authorization': f"Bearer {os.getenv('OSU_API_ACCESS_TOKEN')}"
+        }
+        
+        params = {
+            'ruleset': "taiko"
+        }
+        
+        for mod in self.mods:
+            if mod.acronym == 'DT':
+                params['mods'] = "64"
+            if mod.acronym == 'HT':
+                params['mods'] = "64"
+                
+        url = f"https://osu.ppy.sh/api/v2/beatmaps/{score_info['beatmap']['id']}/attributes"
+        async with http_session.conn.post(url, headers=headers, params=params) as resp:
+            parsed_response = await resp.json()
+            return parsed_response['attributes']['star_rating']
     
     def is_taiko(self) -> bool:
         return self.beatmap.mode == "taiko"

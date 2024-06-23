@@ -16,13 +16,13 @@ class Beatmap:
     drain_time: int
     status: str
     
-    def __init__(self, beatmap_info: dict[str, Any]):
+    def __init__(self, beatmap_info: dict[str, Any], sr_after_mods: float):
         self.id = beatmap_info['id']
         self.url = beatmap_info['url']
         self.mode = beatmap_info['mode']
         self.checksum = beatmap_info['checksum']
         self.difficulty_name = beatmap_info['version']
-        self.sr = beatmap_info['difficulty_rating']
+        self.sr = sr_after_mods
         self.od = beatmap_info['accuracy']
         self.hp = beatmap_info['drain']
         self.num_notes = beatmap_info['count_circles']
