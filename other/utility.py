@@ -119,33 +119,58 @@ def create_str_of_allowed_mods() -> str:
     
     return new_message.strip()  # Removes trailing space
 
-async def get_osu_id_from_discord_id(discord_id: int) -> int | None:
+async def get_osu_id(discord_id: int | None = None, osu_username: str | None = None) -> int | None:
     """Returns None if not found in database."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
-        await cursor.execute("SELECT osu_id FROM exp_table WHERE discord_id=?", (discord_id,))
-        data = await cursor.fetchone()
+        if discord_id is not None:
+            await cursor.execute("SELECT osu_id FROM exp_table WHERE discord_id=?", (discord_id,))
+            
+        elif osu_username is not None:
+            await cursor.execute("SELECT osu_id FROM exp_table WHERE osu_username=?", (osu_username,))
         
+        data = await cursor.fetchone()
         if data is not None:
             return data[0]
         return None
 
-async def get_discord_id_from_osu_id(osu_id: int) -> int | None:
+async def get_discord_id(osu_id: int | None = None, osu_username: str | None = None) -> int | None:
     """Returns None if not found in database."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
-        await cursor.execute("SELECT discord_id FROM exp_table WHERE osu_id=?", (osu_id,))
-        data = await cursor.fetchone()
+        if osu_id is not None:
+            await cursor.execute("SELECT discord_id FROM exp_table WHERE osu_id=?", (osu_id,))
         
+        elif osu_username is not None:
+            await cursor.execute("SELECT discord_id FROM exp_table WHERE osu_username=?", (osu_username,))
+        
+        data = await cursor.fetchone()
         if data is not None:
             return data[0]
         return None
+
+async def get_osu_username(discord_id: int | None = None, osu_id: int | None = None) -> str | None:
+    """Returns None if not found in database."""
     
-async def get_user_exp_bars(discord_id: int) -> dict[str, ExpBar]:
+    async with aiosqlite.connect("./data/database.db") as conn:
+        cursor = await conn.cursor()
+        
+        if discord_id is not None:
+            await cursor.execute("SELECT osu_username FROM exp_table WHERE discord_id=?", (discord_id,))
+        
+        elif osu_id is not None:
+            await cursor.execute("SELECT osu_username FROM exp_table WHERE osu_id=?", (osu_id,))
+        
+        data = await cursor.fetchone()
+        if data is not None:
+            return data[0]
+        return None
+ 
+async def get_user_exp_bars(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, ExpBar]:
     
     user_exp_bars = {}
     
@@ -153,7 +178,14 @@ async def get_user_exp_bars(discord_id: int) -> dict[str, ExpBar]:
         cursor = await conn.cursor()
         
         for exp_bar_name in EXP_BAR_NAMES:
-            await cursor.execute(f"SELECT {exp_bar_name.lower()}_exp FROM exp_table WHERE discord_id=?", (discord_id,))
+            
+            if discord_id is not None:
+                await cursor.execute(f"SELECT {exp_bar_name.lower()}_exp FROM exp_table WHERE discord_id=?", (discord_id,))
+            elif osu_id is not None:
+                await cursor.execute(f"SELECT {exp_bar_name.lower()}_exp FROM exp_table WHERE osu_id=?", (osu_id,))
+            elif osu_username is not None:
+                await cursor.execute(f"SELECT {exp_bar_name.lower()}_exp FROM exp_table WHERE osu_username=?", (osu_username,))
+            
             data = await cursor.fetchone()
             
             assert data is not None
