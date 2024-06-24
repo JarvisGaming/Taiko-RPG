@@ -203,3 +203,14 @@ class Score:
         """
         
         return (self.num_300s + self.num_100s + self.num_misses) / self.beatmap.num_notes
+    
+    def mod_is_in_score(self, mods_to_check_for: str | list[str]) -> bool:
+        """
+        Check if a mod(s) is in a score. Accepts a mod acronym or a list of mod acronyms.
+        If a list is passed in, it will return True if any of the mods in the list are in the score.
+        """
+        
+        for mod_used in self.mods:
+            if mod_used.acronym in mods_to_check_for:
+                return True
+        return False
