@@ -9,7 +9,7 @@ from classes.beatmap import Beatmap
 from classes.beatmapset import Beatmapset
 from classes.mod import Mod
 from other.global_constants import *
-from other.utility import get_discord_id_from_osu_id
+from other.utility import get_discord_id
 
 
 class Score:
@@ -79,7 +79,7 @@ class Score:
         return self
     
     async def __fetch_user_discord_id(self) -> int:
-        discord_id = await get_discord_id_from_osu_id(self.user_osu_id)
+        discord_id = await get_discord_id(osu_id=self.user_osu_id)
         assert discord_id is not None  # You can't send a score without being verified
         return discord_id
     
@@ -108,8 +108,14 @@ class Score:
             return
         
         for mod in self.mods:
-            if mod.acronym in EXP_BAR_NAMES:
-                self.exp_gained[mod.acronym] = self.exp_gained['Overall'] // number_of_exp_bar_mods_activated
+            if mod.acronym in EXP_BAR_NAMES + ['NC', 'DC']:
+                
+                # NC and DC aren't exp bar names, but belong under DT and HT respectively
+                if mod.acronym == 'NC': mod_name = 'DT'
+                elif mod.acronym == 'DC': mod_name = 'HT'
+                else: mod_name = mod.acronym
+                
+                self.exp_gained[mod_name] = self.exp_gained['Overall'] // number_of_exp_bar_mods_activated
 
     def __calculate_total_exp_gained(self) -> int:
         """Calculate the TOTAL exp gained from submitting a score based on a formula."""
@@ -128,7 +134,7 @@ class Score:
         for mod in self.mods:
             
             # There is no mod with the name "Overall" or "NM"
-            if mod.acronym in EXP_BAR_NAMES:
+            if mod.acronym in EXP_BAR_NAMES + ['NC', 'DC']:
                 number_of_exp_bar_mods_activated += 1
                 
         return number_of_exp_bar_mods_activated
@@ -145,10 +151,10 @@ class Score:
         }
         
         for mod in self.mods:
-            if mod.acronym == 'DT':
-                params['mods'] = "64"
-            if mod.acronym == 'HT':
-                params['mods'] = "64"
+            if mod.acronym in ['DT', 'NC']:
+                params['mods'] = "64"  # Why do mod acronyms not work here.
+            if mod.acronym in ['HT', 'DC']:
+                params['mods'] = "256"
                 
         url = f"https://osu.ppy.sh/api/v2/beatmaps/{score_info['beatmap']['id']}/attributes"
         async with http_session.conn.post(url, headers=headers, params=params) as resp:
@@ -167,8 +173,9 @@ class Score:
     def has_illegal_dt_ht_rates(self) -> bool:
         for mod in self.mods:
             # Default DT and HT do not have a 'speed_change' modifier
-            if mod.acronym in ["DT", "HT"] and 'speed_change' in mod.settings:
-                return True
+            if mod.acronym in ['DT', 'NC', 'HT', 'DC'] and mod.settings is not None:
+                if 'speed_change' in mod.settings:
+                    return True
         return False
     
     async def is_already_submitted(self) -> bool:

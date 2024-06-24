@@ -1,4 +1,5 @@
 import os
+import re
 import typing
 
 import aiosqlite
@@ -14,6 +15,17 @@ class SubmitCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
+    @commands.Cog.listener(name="on_message")
+    async def old_submit(self, message: discord.Message):
+        """When replay file is posted, redirect user to use /submit."""
+        
+        # Skip attachment if it's not a replay (doesn't contain ".osr" at the end)
+        # https://regex-vis.com/?r=.*%3F%5C.osr
+        for attachment in message.attachments:
+            if re.match(r".*?\.osr", attachment.filename) is not None:
+                await message.channel.send("We've switched to using `/submit`!")
+                return
+    
     @app_commands.command(name="submit", description="Submit recent scores that you've made, including failed scores.")
     @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit. Leave blank to submit all.")
     @is_verified()
@@ -26,7 +38,7 @@ class SubmitCog(commands.Cog):
             'Authorization': f"Bearer {os.getenv('OSU_API_ACCESS_TOKEN')}",
         }
         
-        user_osu_id = await get_osu_id_from_discord_id(interaction.user.id)
+        user_osu_id = await get_osu_id(discord_id=interaction.user.id)
         url = f"https://osu.ppy.sh/api/v2/users/{user_osu_id}/scores/recent?include_fails=1&mode=taiko&limit={number_of_scores_to_submit}"
         
         async with http_session.conn.get(url, headers=headers) as resp:
@@ -109,7 +121,7 @@ class SubmitCog(commands.Cog):
             return False
         
         elif score.has_illegal_dt_ht_rates():
-            validation_failed_message += "DT must be set to x1.5 speed, and HT must be set to x0.75 speed"
+            validation_failed_message += "DT/NC must be set to x1.5 speed, and HT/DC must be set to x0.75 speed"
             await webhook.send(validation_failed_message)
             return False
         
@@ -120,7 +132,7 @@ class SubmitCog(commands.Cog):
         await conn.execute(query, (score.user_osu_id, score.beatmap.id, score.beatmapset.id, score.timestamp))
     
     async def update_user_exp_bars_in_database(self, conn: aiosqlite.Connection, score: Score):
-        user_exp_bars = await get_user_exp_bars(score.user_discord_id)
+        user_exp_bars = await get_user_exp_bars(discord_id=score.user_discord_id)
         
         # Update dict of ExpBar objects
         for exp_bar_name, amount_of_exp_gained in score.exp_gained.items():
@@ -150,12 +162,12 @@ class SubmitCog(commands.Cog):
         score_stats += f"`[{score.num_300s} • {score.num_100s} • {score.num_misses}]` ▸ "
         score_stats += f"{score.mods_human_readable}"
         
-        # Put the metadata in "value", since you can't use markdown syntax to link url in "name"
+        # Put the metadata in "value", since you can't use markdown syntax to link url in the name part of a field
         text = metadata + '\n' + score_stats
-        embed.add_field(name='', value=text, inline=False)  
+        embed.add_field(name='', value=text, inline=False)
     
     async def add_updated_user_exp_to_embed(self, embed: discord.Embed, score: Score):
-        user_exp_bars = await get_user_exp_bars(score.user_discord_id)
+        user_exp_bars = await get_user_exp_bars(discord_id=score.user_discord_id)
         
         if not score.is_complete_runthrough_of_map():
             map_completion_percentage = score.map_completion_progress() * 100
