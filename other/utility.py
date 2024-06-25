@@ -40,7 +40,8 @@ async def regularly_refresh_access_token():
     
     async with http_session.conn.post("https://osu.ppy.sh/oauth/token", headers=headers, data=data) as resp:
         json_file = await resp.json()
-        dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])
+        os.environ["OSU_API_ACCESS_TOKEN"] = json_file['access_token']  # Updates local environment variable
+        dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])  # Global
         print(f"{datetime.datetime.now()}: Access token refreshed")
 
 def is_admin():
