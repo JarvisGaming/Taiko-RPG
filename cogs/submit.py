@@ -28,6 +28,7 @@ class SubmitCog(commands.Cog):
     
     @app_commands.command(name="submit", description="Submit recent scores that you've made, including failed scores.")
     @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit. Leave blank to submit all.")
+    @app_commands.checks.cooldown(rate=1, per=300.0)
     @is_verified()
     async def submit(self, interaction: discord.Interaction, number_of_scores_to_submit: int = 10000):
 
