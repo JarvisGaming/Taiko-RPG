@@ -86,24 +86,6 @@ def is_verified():
     
     # Adds the check
     return app_commands.check(predicate)
-    
-@bot.event
-async def on_command_error(ctx: commands.Context, error):
-    """
-    Generic error handler for all text commands.
-    Note that both command-specific and cog-specific error handlers are called before this generic handler.
-    """
-    
-    await ctx.send(f"An exception occurred: {error}")
-
-@bot.event
-async def on_app_command_error(interaction: discord.Interaction, error):
-    """
-    Generic error handler for all slash commands.
-    Note that both command-specific and cog-specific error handlers are called before this generic handler.
-    """
-    
-    await interaction.response.send_message(f"An exception occurred: {error}")
 
 async def send_in_all_channels(message: str):
     """Sends <message> in all approved channels."""
