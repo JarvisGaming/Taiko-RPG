@@ -19,7 +19,6 @@ class MiscCog(commands.Cog):
         embed.add_field(name="1. Verify yourself", value="Use `/verify <profile link>` to get started!", inline=False)
            
         # Adds all currently accepted mods to the text
-        mod_list = create_str_of_allowed_mods()
         text =  f"""
                 Use the `/submit` command to submit scores made in the past 24 hours!
                 **Warning: You can only submit your most recent 100 scores. This is an osu API limitation. Please submit regularly.**
