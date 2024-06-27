@@ -34,7 +34,7 @@ class SubmitCog(commands.Cog):
         Choice(name="Yes", value=1),  # Choices can't be bool
         Choice(name="No", value=0)
     ])
-    @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit. Leave blank to submit all.")
+    @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit (capped at 100). Leave blank to submit up to 100.")
     @app_commands.checks.cooldown(rate=1, per=300.0)
     @is_verified()
     async def submit(self, interaction: discord.Interaction, display_each_score: Choice[int], number_of_scores_to_submit: int = 100):
@@ -45,7 +45,7 @@ class SubmitCog(commands.Cog):
         # Slash commands time out after 3 seconds, so we send a response first in case the API requests take too long
         await interaction.response.send_message("Finding scores...")
         all_scores = await self.fetch_user_scores(interaction, number_of_scores_to_submit)
-        await self.update_submit_command_response(interaction, display_each_score, all_scores)
+        await self.display_num_scores_fetched(interaction, display_each_score, all_scores)
         await self.process_and_display_score_impl(webhook, display_each_score, all_scores)
         await self.display_total_exp_change(interaction, user_exp_bars_before_submission, webhook)
 
@@ -64,7 +64,7 @@ class SubmitCog(commands.Cog):
             parsed_response = await resp.json()
             return parsed_response
 
-    async def update_submit_command_response(self, interaction: discord.Interaction, display_each_score: Choice[int], all_scores: list[dict[str, Any]]):
+    async def display_num_scores_fetched(self, interaction: discord.Interaction, display_each_score: Choice[int], all_scores: list[dict[str, Any]]):
         message_content = f"{len(all_scores)} score(s) found!\n"
         if len(all_scores) >= 30 and display_each_score.value:
             message_content += "This might take a while. You can speed it up by setting `display_each_score` to No."
@@ -86,16 +86,25 @@ class SubmitCog(commands.Cog):
             if display_each_score.value:
                 await self.display_one_score(webhook, score)
             
-            await self.process_one_score(score)
+            await self.process_one_score_in_database(score)
             
         file.close()
         await webhook.send("All done!")
 
     async def display_total_exp_change(self, interaction: discord.Interaction, user_exp_bars_before_submission: dict[str, ExpBar], webhook: discord.Webhook):
         user_exp_bars_after_submission = await get_user_exp_bars(discord_id=interaction.user.id)
-        embed = discord.Embed(title="Your EXP changes:")
+        osu_username = await get_osu_username(discord_id=interaction.user.id)
+        embed = discord.Embed(title=f"{osu_username}'s EXP changes:")
         embed.colour = discord.Color.from_rgb(255,255,255)  # white
         
+        self.add_relevant_exp_bars_to_exp_change_embed(user_exp_bars_before_submission, user_exp_bars_after_submission, embed)
+        
+        if len(embed.fields) == 0:
+            embed.add_field(name="No changes!", value='')
+        await webhook.send(embed=embed)
+
+    def add_relevant_exp_bars_to_exp_change_embed(self, user_exp_bars_before_submission: dict[str, ExpBar], 
+                                                  user_exp_bars_after_submission: dict[str, ExpBar], embed: discord.Embed):
         for (exp_bar_name, exp_bar_before), exp_bar_after in zip(user_exp_bars_before_submission.items(), user_exp_bars_after_submission.values()):
             if exp_bar_after.total_exp > exp_bar_before.total_exp:
                 name_info = f"{exp_bar_name} Level {exp_bar_before.level} "
@@ -106,9 +115,9 @@ class SubmitCog(commands.Cog):
                 
                 embed.add_field(name=name_info, value=value_info, inline=False)
 
-        await webhook.send(embed=embed)
-
     def write_one_score_to_debug_file(self, file: typing.TextIO, score: Score):
+        """This is purely for debugging purposes."""
+        
         file.write(f"OVERALL:\n")
         attributes = vars(score)
         for key, value in attributes.items():
@@ -134,14 +143,11 @@ class SubmitCog(commands.Cog):
                     
         file.write("\n\n\n\n\n")
 
-    async def process_one_score(self, score: Score):
+    async def process_one_score_in_database(self, score: Score):
         
         async with aiosqlite.connect("./data/database.db") as conn:
-            # Edit the database
             await self.add_score_to_database(conn, score)
             await self.update_user_exp_bars_in_database(conn, score)
-            
-            # Commit all database changes
             await conn.commit()
 
     async def score_is_valid(self, webhook: discord.Webhook, score: Score, display_each_score: Choice[int]) -> bool:
@@ -178,7 +184,7 @@ class SubmitCog(commands.Cog):
     async def update_user_exp_bars_in_database(self, conn: aiosqlite.Connection, score: Score):
         user_exp_bars = await get_user_exp_bars(discord_id=score.user_discord_id)
         
-        # Update dict of ExpBar objects
+        # Update user_exp_bars with new the new exp values
         for exp_bar_name, amount_of_exp_gained in score.exp_gained.items():
             if amount_of_exp_gained > 0:
                 user_exp_bars[exp_bar_name].add_exp_to_expbar(amount_of_exp_gained)
@@ -190,10 +196,7 @@ class SubmitCog(commands.Cog):
             await cursor.execute(query, (exp_bar.total_exp, exp_bar.level, score.user_osu_id))
     
     async def display_one_score(self, webhook: discord.Webhook, score: Score):
-        # Initialize the embed to be sent
         embed = discord.Embed()
-        
-        # Add information to the embed
         embed.title = f"{score.username} submitted a new score:"
         await self.add_metadata_and_score_stats_to_embed(embed, score)
         await self.add_updated_user_exp_to_embed(embed, score)
