@@ -1,11 +1,13 @@
 import os
 import re
 import typing
+from typing import Any
 
 import aiosqlite
 import discord
 from classes.score import Score
 from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
 from other.global_constants import *
 from other.utility import *
@@ -27,11 +29,27 @@ class SubmitCog(commands.Cog):
                 return
     
     @app_commands.command(name="submit", description="Submit recent scores that you've made, including failed scores.")
+    @app_commands.describe(display_each_score="Whether you want to display the details of each score.")
+    @app_commands.choices(display_each_score=[
+        Choice(name="Yes", value=1),  # Choices can't be bool
+        Choice(name="No", value=0)
+    ])
     @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit. Leave blank to submit all.")
     @app_commands.checks.cooldown(rate=1, per=300.0)
     @is_verified()
-    async def submit(self, interaction: discord.Interaction, number_of_scores_to_submit: int = 10000):
+    async def submit(self, interaction: discord.Interaction, display_each_score: Choice[int], number_of_scores_to_submit: int = 100):
+        
+        user_exp_bars_before_submission = await get_user_exp_bars(discord_id=interaction.user.id)
+        webhook = interaction.followup
+        
+        # Slash commands time out after 3 seconds, so we send a response first in case the API requests take too long
+        await interaction.response.send_message("Finding scores...")
+        all_scores = await self.fetch_user_scores(interaction, number_of_scores_to_submit)
+        await self.update_submit_command_response(interaction, display_each_score, all_scores)
+        await self.process_and_display_score_impl(webhook, display_each_score, all_scores)
+        await self.display_total_exp_change(interaction, user_exp_bars_before_submission, webhook)
 
+    async def fetch_user_scores(self, interaction: discord.Interaction, number_of_scores_to_submit: int):
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
@@ -44,27 +62,51 @@ class SubmitCog(commands.Cog):
         
         async with http_session.conn.get(url, headers=headers) as resp:
             parsed_response = await resp.json()
-            webhook = interaction.followup  # We can use webhook.send to send followup messages
-            file = open("./data/scores.txt", "w")
+            return parsed_response
 
-            message_content = f"Processing {len(parsed_response)} scores...\n"
-            if len(parsed_response) >= 20:
-                message_content += "The bot will get rate limited on large submissions. Please be patient!"
-            await interaction.response.send_message(content=message_content)
+    async def update_submit_command_response(self, interaction: discord.Interaction, display_each_score: Choice[int], all_scores: list[dict[str, Any]]):
+        message_content = f"{len(all_scores)} score(s) found!\n"
+        if len(all_scores) >= 30 and display_each_score.value:
+            message_content += "This might take a while. You can speed it up by setting `display_each_score` to No."
             
-            for score_info in parsed_response:
-                score = await Score.create_score_object(score_info)
-                self.write_one_score_to_debug_file(file, score)
+        # You have to fetch the original response to edit it (for some reason)
+        original_response = await interaction.original_response()
+        await original_response.edit(content=message_content)
 
-                if not await self.score_is_valid(webhook, score):
-                    continue
-                
-                await self.process_one_score(score)
+    async def process_and_display_score_impl(self, webhook: discord.Webhook, display_each_score: Choice[int], all_scores: list[dict[str, Any]]):
+        file = open("./data/scores.txt", "w")
+        
+        for score_info in all_scores:
+            score = await Score.create_score_object(score_info)
+            self.write_one_score_to_debug_file(file, score)
+
+            if not await self.score_is_valid(webhook, score, display_each_score):
+                continue
+            
+            if display_each_score.value:
                 await self.display_one_score(webhook, score)
-            file.close()
             
-            # Add total exp gained after all submissions
-            await webhook.send("All done!")
+            await self.process_one_score(score)
+            
+        file.close()
+        await webhook.send("All done!")
+
+    async def display_total_exp_change(self, interaction: discord.Interaction, user_exp_bars_before_submission: dict[str, ExpBar], webhook: discord.Webhook):
+        user_exp_bars_after_submission = await get_user_exp_bars(discord_id=interaction.user.id)
+        embed = discord.Embed(title="Your EXP changes:")
+        embed.colour = discord.Color.from_rgb(255,255,255)  # white
+        
+        for (exp_bar_name, exp_bar_before), exp_bar_after in zip(user_exp_bars_before_submission.items(), user_exp_bars_after_submission.values()):
+            if exp_bar_after.total_exp > exp_bar_before.total_exp:
+                name_info = f"{exp_bar_name} Level {exp_bar_before.level} "
+                if exp_bar_after.level > exp_bar_before.level:
+                    name_info += f"→ {exp_bar_after.level} (+{exp_bar_after.level - exp_bar_before.level})"
+                
+                value_info = f"EXP: {exp_bar_before.total_exp} → {exp_bar_after.total_exp} (+{exp_bar_after.total_exp - exp_bar_before.total_exp})"
+                
+                embed.add_field(name=name_info, value=value_info, inline=False)
+
+        await webhook.send(embed=embed)
 
     def write_one_score_to_debug_file(self, file: typing.TextIO, score: Score):
         file.write(f"OVERALL:\n")
@@ -102,28 +144,29 @@ class SubmitCog(commands.Cog):
             # Commit all database changes
             await conn.commit()
 
-    async def score_is_valid(self, webhook: discord.Webhook, score: Score) -> bool:
+    async def score_is_valid(self, webhook: discord.Webhook, score: Score, display_each_score: Choice[int]) -> bool:
         validation_failed_message = f"Ignoring **{score.beatmapset.artist} - {score.beatmapset.title} [{score.beatmap.difficulty_name}]**\n"
         validation_failed_message += "Reason: "
         
         if await score.is_already_submitted():
             validation_failed_message += "Score is already submitted"
-            await webhook.send(validation_failed_message)
-            return False
-
+            
         elif score.is_convert:
             validation_failed_message += "Score is a convert"
-            await webhook.send(validation_failed_message)
-            return False
         
         elif score.has_illegal_mods():
             validation_failed_message += "Score contains disallowed mods. The only allowed mods are: " + create_str_of_allowed_mods()
-            await webhook.send(validation_failed_message)
-            return False
         
         elif score.has_illegal_dt_ht_rates():
             validation_failed_message += "DT/NC must be set to x1.5 speed, and HT/DC must be set to x0.75 speed"
-            await webhook.send(validation_failed_message)
+        
+        if await score.is_already_submitted() or score.is_convert or score.has_illegal_mods() or score.has_illegal_dt_ht_rates():
+            
+            # It's a choice, so we need to access the value (Choice[int] is true-like)
+            if display_each_score.value:
+                await webhook.send(validation_failed_message)
+                
+            # The score is not valid regardless of whether it is displayed
             return False
         
         return True
@@ -162,6 +205,10 @@ class SubmitCog(commands.Cog):
         score_stats += f"{score.accuracy:.2f}% ▸ "
         score_stats += f"`[{score.num_300s} • {score.num_100s} • {score.num_misses}]` ▸ "
         score_stats += f"{score.mods_human_readable}"
+        
+        # If they quit out, there's no point in telling them they failed
+        if not score.is_pass and score.is_complete_runthrough_of_map():
+            score_stats += " ▸ Failed"
         
         # Put the metadata in "value", since you can't use markdown syntax to link url in the name part of a field
         text = metadata + '\n' + score_stats
