@@ -22,9 +22,16 @@ class MiscCog(commands.Cog):
         mod_list = create_str_of_allowed_mods()
         text =  f"""
                 Use the `/submit` command to submit scores made in the past 24 hours!
+                **Warning: You can only submit your most recent 100 scores. This is an osu API limitation. Please submit regularly.**
+                
                 Note that only the following mods are allowed:
-                {mod_list}
-                """ 
+                **Difficulty Reducing Mods:**
+                NF EZ HT
+                **Difficulty Increasing Mods:**
+                HR SD PF DT NC HD FL
+                **Other Mods:**
+                CL AC SG MU
+                """
         text = inspect.cleandoc(text)  # Removes weird indentation of doc strings
         embed.add_field(name="2. Submit scores", value=text, inline=False)
         
