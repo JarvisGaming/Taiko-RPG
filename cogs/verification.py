@@ -46,7 +46,7 @@ class VerificationCog(commands.Cog):
         async with aiosqlite.connect("./data/database.db") as conn:
             cursor = await conn.cursor()
             
-            if await self.user_is_already_verified(interaction, osu_user, cursor):
+            if await self.user_is_already_verified(osu_user, cursor):
                 await interaction.response.send_message("You are already verified!")
                 return
         
@@ -72,7 +72,7 @@ class VerificationCog(commands.Cog):
             return False
         return True
 
-    async def user_is_already_verified(self, interaction: discord.Interaction, osu_user: ossapi.User, cursor: aiosqlite.Cursor):
+    async def user_is_already_verified(self, osu_user: ossapi.User, cursor: aiosqlite.Cursor):
         await cursor.execute("SELECT osu_id FROM exp_table WHERE osu_id=?", (osu_user.id,))
         if await cursor.fetchone() is not None:
             return True
@@ -82,5 +82,65 @@ class VerificationCog(commands.Cog):
         query = "INSERT INTO exp_table(osu_username, osu_id, discord_id) VALUES (?, ?, ?)"
         await cursor.execute(query, (osu_user.username, osu_user.id, interaction.user.id))
 
+    @app_commands.command(name="update_osu_username", description="If you got a username change on osu, use this to update your name in the bot.")
+    @is_verified()  # is_verified checks using discord_id, so we can use it here
+    async def update_osu_username(self, interaction: discord.Interaction):
+        osu_id = await get_osu_id(discord_id=interaction.user.id)
+        assert osu_id is not None
+        
+        try:
+            osu_user = await osu_api.user(osu_id, key=UserLookupKey.ID)
+        except ValueError:
+            await interaction.response.send_message("User does not exist!")
+            return
+        except Exception as error:
+            await interaction.response.send_message(f"An exception occured: {error}")
+            return
+        
+        async with aiosqlite.connect("./data/database.db") as conn:
+            await conn.execute("UPDATE exp_table SET osu_username=? WHERE discord_id=?", (osu_user.username, interaction.user.id))
+            await conn.commit()
+        
+        await interaction.response.send_message("Username updated successfully!")
+
+    @app_commands.command(name="update_discord_account", description="If you're using a new discord account, use this to update your discord id in the bot.")
+    async def update_discord_account(self, interaction: discord.Interaction, profile_link: str):
+        osu_id = self.get_osu_id_from_profile_link(profile_link)
+        if osu_id is None:
+            await interaction.response.send_message("Profile link should be in the format of `https://osu.ppy.sh/users/<user id>`")
+            return
+        
+        try:
+            osu_user = await osu_api.user(osu_id, key=UserLookupKey.ID)
+        except ValueError:
+            await interaction.response.send_message("User does not exist!")
+            return
+        except Exception as error:
+            await interaction.response.send_message(f"An exception occured: {error}")
+            return
+        
+        if not await self.osu_profile_discord_field_is_correct(interaction, osu_user):
+            message =   f"""
+                        Your discord username is: {interaction.user.name}
+                        Your osu profile's discord field is: {osu_user.discord}
+                        Please fill in the correct discord name in your osu profile!
+                        (You can unset it after you verify yourself.)
+                        """
+            message = inspect.cleandoc(message)  # Removes weird identation of triple quote strings
+            await interaction.response.send_message(message) 
+            return
+
+        async with aiosqlite.connect("./data/database.db") as conn:
+            cursor = await conn.cursor()
+            await cursor.execute("SELECT 1 FROM exp_table WHERE osu_id=?", (osu_id,))
+            if await cursor.fetchone() is None:
+                await interaction.response.send_message("You are not verified!")
+                return
+
+            await cursor.execute("UPDATE exp_table SET discord_id=? WHERE osu_id=?", (interaction.user.id, osu_id))
+            await conn.commit()
+        
+        await interaction.response.send_message("Discord account updated successfully!")
+        
 async def setup(bot: commands.Bot):
     await bot.add_cog(VerificationCog(bot))
