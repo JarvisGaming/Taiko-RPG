@@ -15,8 +15,10 @@ class ProfileCog(commands.Cog):
     @is_verified()
     async def profile(self, interaction: discord.Interaction, osu_username: str | None = None):
         
+        # osu_username is an optional field
         if osu_username is None:
             osu_username = await get_osu_username(discord_id=interaction.user.id)
+            
         user_exp_bars = await get_user_exp_bars(osu_username=osu_username)
         embed = discord.Embed(title=f"{osu_username}'s EXP Stats", colour=discord.Colour.blurple())
         

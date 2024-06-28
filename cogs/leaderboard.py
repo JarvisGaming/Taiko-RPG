@@ -23,26 +23,20 @@ class LeaderboardCog(commands.Cog):
     @is_verified()
     async def leaderboard(self, interaction: discord.Interaction, leaderboard_type: Choice[str], page: int = 1):
         """
-        /leaderboard <leadboard type> <page number>
         Shows the leaderboard for a particular mod type, including the user's position.
         If no argument is passed, then the overall leaderboard will be shown (total).
         """
-        
+
         # Set parameters in the db queries
         num_results_displayed_per_page = 10
         offset = (page - 1) * num_results_displayed_per_page
-        lb_type = leaderboard_type.value
         
         async with aiosqlite.connect("./data/database.db") as conn:
             cursor = await conn.cursor()
             
             # Check if inputted page is out of range
-            await cursor.execute("SELECT COUNT(*) FROM exp_table")  # Counts the number of rows in exp_table
-            data = await cursor.fetchone()
-        
-            assert data is not None
-            num_pages: int = data[0] // num_results_displayed_per_page + 1
-            if page < 1 or page > num_pages:
+            num_pages = await self.get_num_pages_in_lb(num_results_displayed_per_page, cursor)
+            if await self.page_is_out_of_range(page, num_pages):
                 await interaction.response.send_message(f"Invalid page number! Enter a page from 1 - {num_pages}")
                 return
             
@@ -50,28 +44,32 @@ class LeaderboardCog(commands.Cog):
             embed = discord.Embed(title=f"{leaderboard_type.name} Leaderboard")
             
             # Add stuff to leaderboard
-            await self.populate_leaderboard(cursor, embed, lb_type, num_results_displayed_per_page, offset)
+            await self.populate_leaderboard(cursor, embed, leaderboard_type, num_results_displayed_per_page, offset)
             embed.add_field(name='', value='-------------------------')  # Separate the leaderboard results from the user's personal stats at the bottom
-            await self.add_user_to_leaderboard(interaction, cursor, embed, lb_type)
+            await self.add_user_to_leaderboard(interaction, cursor, embed, leaderboard_type)
 
         # Change embed colour depending on the mod
         self.change_embed_colour_based_on_mod(embed, leaderboard_type)
         
         # Show the number of pages of the leaderboard in the footer
         embed.set_footer(text=f"Page {page} of {num_pages}")
-        
-        await interaction.response.send_message(embed=embed)
-    
-    def add_one_row_to_leaderboard(self, embed: discord.Embed, row):
-        """Helper function. Given a row containing a user's rank, username, level, and exp, adds it to the leaderboard."""
-        
-        ranking = row[0]
-        osu_username = row[1]
-        level = row[2]
-        exp = row[3]
-        embed.add_field(name=f"{ranking}. {osu_username}", value = f"Level: {level} | EXP: {exp}", inline=False)
 
-    async def populate_leaderboard(self, cursor: aiosqlite.Cursor, embed: discord.Embed, lb_type: str, num_results_displayed_per_page: int, offset: int):
+        await interaction.response.send_message(embed=embed)
+        
+    async def get_num_pages_in_lb(self, num_results_displayed_per_page: int, cursor: aiosqlite.Cursor):
+        await cursor.execute("SELECT COUNT(*) FROM exp_table")  # Counts the number of players in total
+        data = await cursor.fetchone()
+        
+        assert data is not None
+        num_pages: int = data[0] // num_results_displayed_per_page + 1
+        return num_pages
+    
+    async def page_is_out_of_range(self, page: int, num_pages: int) -> bool:
+        if page < 1 or page > num_pages:
+            return True
+        return False
+
+    async def populate_leaderboard(self, cursor: aiosqlite.Cursor, embed: discord.Embed, leaderboard_type: Choice[str], num_results_displayed_per_page: int, offset: int):
         """
         Populates the leaderboard with other users' stats.
         num_results_displayed_per_page determines the number of users that are displayed.
@@ -82,14 +80,15 @@ class LeaderboardCog(commands.Cog):
         # dense_rank() is a window function, which adds a column called "ranking" based on the data sorted by exp descending
         # LIMIT limits the number of results shown at once
         # OFFSET is the row number that it starts from, 0-indexed
+        lb_type = leaderboard_type.value
         query = f"""
-                    SELECT 
-                        dense_rank() OVER (ORDER BY {lb_type}_exp DESC) AS ranking, 
-                        osu_username, {lb_type}_level, {lb_type}_exp 
-                    FROM exp_table 
-                    ORDER BY {lb_type}_exp DESC 
-                    LIMIT {num_results_displayed_per_page}
-                    OFFSET {offset}
+                SELECT 
+                    dense_rank() OVER (ORDER BY {lb_type}_exp DESC) AS ranking, 
+                    osu_username, {lb_type}_level, {lb_type}_exp 
+                FROM exp_table 
+                ORDER BY {lb_type}_exp DESC 
+                LIMIT {num_results_displayed_per_page}
+                OFFSET {offset}
                 """
         await cursor.execute(query)
         table = await cursor.fetchall()
@@ -98,20 +97,30 @@ class LeaderboardCog(commands.Cog):
         for row in table:
             self.add_one_row_to_leaderboard(embed, row)
 
-    async def add_user_to_leaderboard(self, interaction: discord.Interaction, cursor: aiosqlite.Cursor, embed: discord.Embed, lb_type: str):
+    def add_one_row_to_leaderboard(self, embed: discord.Embed, row):
+        """Helper function. Given a row containing a user's rank, username, level, and exp, adds it to the leaderboard."""
+        
+        ranking = row[0]
+        osu_username = row[1]
+        level = row[2]
+        exp = row[3]
+        embed.add_field(name=f"{ranking}. {osu_username}", value = f"Level: {level} | EXP: {exp}", inline=False)
+
+    async def add_user_to_leaderboard(self, interaction: discord.Interaction, cursor: aiosqlite.Cursor, embed: discord.Embed, leaderboard_type: Choice[str]):
         """Add the user's stats and ranking at the bottom of the leaderboard."""
         
         # Get the user's position and statistics
+        lb_type = leaderboard_type.value
         query = f"""
-                    WITH data AS 
-                        (SELECT 
-                        dense_rank() OVER (ORDER BY {lb_type}_exp DESC) AS ranking, 
-                        osu_username, {lb_type}_level, {lb_type}_exp, discord_id
-                        FROM exp_table 
-                        ORDER BY {lb_type}_exp DESC)
+                WITH data AS 
+                    (SELECT 
+                    dense_rank() OVER (ORDER BY {lb_type}_exp DESC) AS ranking, 
+                    osu_username, {lb_type}_level, {lb_type}_exp, discord_id
+                    FROM exp_table 
+                    ORDER BY {lb_type}_exp DESC)
 
-                    SELECT ranking, osu_username, {lb_type}_level, {lb_type}_exp FROM data
-                    WHERE discord_id = {interaction.user.id}
+                SELECT ranking, osu_username, {lb_type}_level, {lb_type}_exp FROM data
+                WHERE discord_id = {interaction.user.id}
                 """
         await cursor.execute(query)
         row = await cursor.fetchone()

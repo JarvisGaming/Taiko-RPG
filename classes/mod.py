@@ -1,6 +1,8 @@
 from typing import Any
 
 class Mod:
+    """Class representing an osu mod."""
+    
     acronym: str
     settings: dict[str, Any]
     

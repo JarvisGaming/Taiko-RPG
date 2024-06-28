@@ -1,4 +1,6 @@
 class ExpBar:
+    """Class representing an exp bar. Meant to be used in a dictionary as a value."""
+    
     total_exp: int
     level: int
     exp_progress_to_next_level: int

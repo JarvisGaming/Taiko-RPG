@@ -2,6 +2,8 @@ from typing import Any
 
 
 class Beatmap:
+    """Class representing a beatmap, which is a singular difficulty. Not to be confused with beatmapset."""
+    
     id: int
     url: str
     mode: str

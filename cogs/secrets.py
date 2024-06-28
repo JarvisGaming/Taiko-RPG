@@ -34,13 +34,12 @@ class SecretsCog(commands.Cog):
         
     @app_commands.command(name="secret", description="what's it gonna be?")
     async def random(self, interaction: discord.Interaction):
-        """Displays a random text or image."""
+        """Displays a random piece of media."""
         
         num_images = len(os.listdir("./cogs/secrets_data/images"))
         num_texts = len(os.listdir("./cogs/secrets_data/texts"))
         num_videos = len(os.listdir("./cogs/secrets_data/videos"))
         num_songs = len(song_list)
-        
         
         # This is a weighted choice, so if there are more texts, then texts are more likely to be chosen and vice versa
         type_to_display = random.choices(["image", "text", "video", "song"], weights=[num_images, num_texts, num_videos, num_songs])[0]

@@ -13,6 +13,8 @@ from other.utility import get_discord_id
 
 
 class Score:
+    "Class representing an osu score. Contains information about the score itself, exp gained from the score, and beatmap and beatmapset information."
+    
     username: str
     user_osu_id: int
     user_discord_id: int
@@ -84,7 +86,7 @@ class Score:
         return discord_id
     
     def __create_human_readable_mod_listing(self) -> str:
-        """Create a human-readable listing of the mods used."""
+        """Create a human-readable listing of the mods used in the score."""
         
         mods_human_readable = ""
         for mod in self.mods:
@@ -92,14 +94,12 @@ class Score:
         return mods_human_readable.strip()  # Remove trailing whitespace
     
     def __init_exp_gained(self):
-        self.exp_gained = {exp_bar_name: 0 for exp_bar_name in EXP_BAR_NAMES}
-        self.__set_exp_gained()
-        
-    def __set_exp_gained(self):
         """
-        Set the exp gained for each mod. If there are no mods, only NoMod exp will be given.
+        Initialize and set the exp gained for each mod. If there are no mods, only NoMod exp will be given.
         Otherwise, split exp amongst activated exp bar mods.
         """
+        
+        self.exp_gained = {exp_bar_name: 0 for exp_bar_name in EXP_BAR_NAMES}
         self.exp_gained['Overall'] = self.__calculate_total_exp_gained()
         number_of_exp_bar_mods_activated = self.__count_number_of_exp_bar_mods_activated()
         
@@ -116,7 +116,7 @@ class Score:
                 else: mod_name = mod.acronym
                 
                 self.exp_gained[mod_name] = self.exp_gained['Overall'] // number_of_exp_bar_mods_activated
-
+        
     def __calculate_total_exp_gained(self) -> int:
         """Calculate the TOTAL exp gained from submitting a score based on a formula."""
         

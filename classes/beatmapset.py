@@ -1,6 +1,9 @@
 from typing import Any
 
+
 class Beatmapset:
+    """Class representing a beatmapset (known as "set"), which is a collection of difficulties. Not to be confused with beatmap."""
+    
     id: int
     artist: str
     artist_unicode: str

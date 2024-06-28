@@ -1,6 +1,7 @@
 import inspect
 import re
 
+import ossapi
 from discord import app_commands
 from discord.ext import commands
 from ossapi import UserLookupKey
@@ -16,22 +17,14 @@ class VerificationCog(commands.Cog):
     @app_commands.describe(profile_link="Your osu profile link")
     async def verify(self, interaction: discord.Interaction, profile_link: str):
         """Verifies user and adds them to the database."""
-        
-        # Checks if link matches the format "https://osu.ppy.sh/users/<user id>"
-        # https://regex-vis.com/?r=https%3A%2F%2Fosu%5C.ppy%5C.sh%2Fusers%2F%28%5B0-9%5D%2B%29
-        regex_check = r"https://osu\.ppy\.sh/users/([0-9]+)"  
-        match = re.match(regex_check, profile_link)
 
-        # Check if format of link is incorrect
-        if match is None:
+        osu_id = self.get_osu_id_from_profile_link(profile_link)
+        if osu_id is None:
             await interaction.response.send_message("Profile link should be in the format of `https://osu.ppy.sh/users/<user id>`")
             return
         
-        id = match.group(1)  # Gets the ID part of the link
-        
-        # Get osu user using id
         try:
-            osu_user = await osu_api.user(id, key=UserLookupKey.ID)
+            osu_user = await osu_api.user(osu_id, key=UserLookupKey.ID)
         except ValueError:
             await interaction.response.send_message("User does not exist!")
             return
@@ -39,8 +32,7 @@ class VerificationCog(commands.Cog):
             await interaction.response.send_message(f"An exception occured: {error}")
             return
         
-        # Check if discord name in osu profile is incorrect
-        if interaction.user.name != osu_user.discord:
+        if not await self.osu_profile_discord_field_is_correct(interaction, osu_user):
             message =   f"""
                         Your discord username is: {interaction.user.name}
                         Your osu profile's discord field is: {osu_user.discord}
@@ -54,19 +46,41 @@ class VerificationCog(commands.Cog):
         async with aiosqlite.connect("./data/database.db") as conn:
             cursor = await conn.cursor()
             
-            # Check if user is already verified
-            await cursor.execute("SELECT osu_id FROM exp_table WHERE osu_id=?", (osu_user.id,))
-            if await cursor.fetchone() is not None:
+            if await self.user_is_already_verified(interaction, osu_user, cursor):
                 await interaction.response.send_message("You are already verified!")
                 return
         
-            # Add user to database
-            query = "INSERT INTO exp_table(osu_username, osu_id, discord_id) VALUES (?, ?, ?)"
-            await cursor.execute(query, (osu_user.username, osu_user.id, interaction.user.id))
-            
+            await self.add_user_to_database(interaction, osu_user, cursor)
             await conn.commit()
         
         await interaction.response.send_message("Verification successful! Use the `/help` command to see where to start!")
+
+    def get_osu_id_from_profile_link(self, profile_link: str) -> str | None:
+        """
+        Returns the user id part of "https://osu.ppy.sh/users/<user id>". Returns None if there is no match.
+        https://regex-vis.com/?r=https%3A%2F%2Fosu%5C.ppy%5C.sh%2Fusers%2F%28%5B0-9%5D%2B%29
+        """
+        regex_check = r"https://osu\.ppy\.sh/users/([0-9]+)"  
+        match = re.match(regex_check, profile_link)
+
+        if match is None:
+            return None
+        return match.group(1)  # Gets the ID part from the link
+
+    async def osu_profile_discord_field_is_correct(self, interaction: discord.Interaction, osu_user: ossapi.User) -> bool:
+        if interaction.user.name != osu_user.discord:
+            return False
+        return True
+
+    async def user_is_already_verified(self, interaction: discord.Interaction, osu_user: ossapi.User, cursor: aiosqlite.Cursor):
+        await cursor.execute("SELECT osu_id FROM exp_table WHERE osu_id=?", (osu_user.id,))
+        if await cursor.fetchone() is not None:
+            return True
+        return False
+    
+    async def add_user_to_database(self, interaction: discord.Interaction, osu_user: ossapi.User, cursor: aiosqlite.Cursor):
+        query = "INSERT INTO exp_table(osu_username, osu_id, discord_id) VALUES (?, ?, ?)"
+        await cursor.execute(query, (osu_user.username, osu_user.id, interaction.user.id))
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(VerificationCog(bot))
