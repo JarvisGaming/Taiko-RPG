@@ -4,7 +4,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from other.global_constants import *
-from other.utility import create_str_of_allowed_mods
 
 
 class MiscCog(commands.Cog):
@@ -39,6 +38,6 @@ class MiscCog(commands.Cog):
         embed.add_field(name="5. Found a bug? Have any suggestions?", value="Talk about it in the #suggest-and-complain channel!", inline=False)
         
         await interaction.response.send_message(embed=embed)
-        
+    
 async def setup(bot: commands.Bot):
     await bot.add_cog(MiscCog(bot))
