@@ -190,10 +190,9 @@ class SubmitCog(commands.Cog):
                 user_exp_bars[exp_bar_name].add_exp_to_expbar(amount_of_exp_gained)
         
         # Write to db
-        cursor = await conn.cursor()
         for exp_bar_name, exp_bar in user_exp_bars.items():
             query = f"UPDATE exp_table SET {exp_bar_name.lower()}_exp=?, {exp_bar_name.lower()}_level=? WHERE osu_id=?"
-            await cursor.execute(query, (exp_bar.total_exp, exp_bar.level, score.user_osu_id))
+            await conn.execute(query, (exp_bar.total_exp, exp_bar.level, score.user_osu_id))
     
     async def display_one_score(self, webhook: discord.Webhook, score: Score):
         embed = discord.Embed()
