@@ -180,7 +180,7 @@ class Score:
     
     async def is_already_submitted(self) -> bool:
         async with aiosqlite.connect("./data/database.db") as conn:
-
+    
             # See if the score database contains a row with the exact same information as the submitted score
             query = "SELECT * FROM submitted_scores WHERE osu_id=? AND beatmap_id=? AND beatmapset_id=? AND timestamp=?"
             cursor = await conn.execute(query, (self.user_osu_id, self.beatmap.id, self.beatmapset.id, self.timestamp))
