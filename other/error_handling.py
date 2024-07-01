@@ -22,12 +22,13 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     Note that both command-specific and cog-specific error handlers are called before this generic handler.
     """
     
-    # Checks like is_verified are already handled
-    if isinstance(error, discord.app_commands.CheckFailure):
-        return
-        
-    elif isinstance(error, discord.app_commands.CommandOnCooldown):
+    if isinstance(error, discord.app_commands.CommandOnCooldown):
+        print("cooldown check")
         await interaction.response.send_message(error)
+    
+    # Checks like is_verified are already handled
+    elif isinstance(error, discord.app_commands.CheckFailure):
+        return
         
     elif interaction.response.is_done():
         original_response = await interaction.original_response()
