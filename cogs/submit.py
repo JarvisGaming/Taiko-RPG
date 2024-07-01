@@ -39,11 +39,12 @@ class SubmitCog(commands.Cog):
     @is_verified()
     async def submit(self, interaction: discord.Interaction, display_each_score: Choice[int], number_of_scores_to_submit: int = 100):
         
+        # Slash commands time out after 3 seconds, so we send a response first in case the API requests take too long
+        await interaction.response.send_message("Finding scores...")
+        
         user_exp_bars_before_submission = await get_user_exp_bars(discord_id=interaction.user.id)
         webhook = interaction.followup
         
-        # Slash commands time out after 3 seconds, so we send a response first in case the API requests take too long
-        await interaction.response.send_message("Finding scores...")
         all_scores = await self.fetch_user_scores(interaction, number_of_scores_to_submit)
         await self.display_num_scores_fetched(interaction, display_each_score, all_scores)
         await self.process_and_display_score_impl(webhook, display_each_score, all_scores)
