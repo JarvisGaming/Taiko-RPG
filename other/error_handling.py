@@ -23,7 +23,6 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
     """
     
     if isinstance(error, discord.app_commands.CommandOnCooldown):
-        print("cooldown check")
         await interaction.response.send_message(error)
     
     # Checks like is_verified are already handled
