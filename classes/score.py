@@ -120,7 +120,7 @@ class Score:
     def __calculate_total_exp_gained(self) -> int:
         """Calculate the TOTAL exp gained from submitting a score based on a formula."""
         
-        total_exp_gained = math.pow(max(3*self.num_300s + 0.75*self.num_100s - 3*self.num_misses, 0), 0.6) * math.pow(min(self.beatmap.sr+1, 11), 1.2) * 0.05
+        total_exp_gained = math.pow(max(3*self.num_300s + 0.75*self.num_100s - 3*self.num_misses, 0), 0.6) * min(self.beatmap.sr+1, 11) * 0.07
         
         # Punish incomplete scores according to how much of the map was played
         if not self.is_complete_runthrough_of_map():
