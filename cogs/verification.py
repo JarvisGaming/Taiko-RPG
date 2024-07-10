@@ -1,12 +1,13 @@
 import inspect
 import re
 
+import aiosqlite
 import ossapi
+import other.utility
 from discord import app_commands
 from discord.ext import commands
 from ossapi import UserLookupKey
 from other.global_constants import *
-from other.utility import *
 
 
 class VerificationCog(commands.Cog):
@@ -79,13 +80,14 @@ class VerificationCog(commands.Cog):
         return False
     
     async def add_user_to_database(self, interaction: discord.Interaction, osu_user: ossapi.User, cursor: aiosqlite.Cursor):
-        query = "INSERT INTO exp_table(osu_username, osu_id, discord_id) VALUES (?, ?, ?)"
-        await cursor.execute(query, (osu_user.username, osu_user.id, interaction.user.id))
+        await cursor.execute("INSERT INTO exp_table (osu_username, osu_id, discord_id) VALUES (?, ?, ?)", (osu_user.username, osu_user.id, interaction.user.id))
+        await cursor.execute("INSERT INTO currency (osu_id) VALUES (?)", (osu_user.id,))
+        await cursor.execute("INSERT INTO upgrades (osu_id) VALUES (?)", (osu_user.id,))
 
     @app_commands.command(name="update_osu_username", description="If you got a username change on osu, use this to update your name in the bot.")
-    @is_verified()  # is_verified checks using discord_id, so we can use it here
+    @other.utility.is_verified()  # is_verified checks using discord_id, so we can use it here
     async def update_osu_username(self, interaction: discord.Interaction):
-        osu_id = await get_osu_id(discord_id=interaction.user.id)
+        osu_id = await other.utility.get_osu_id(discord_id=interaction.user.id)
         assert osu_id is not None
         
         try:

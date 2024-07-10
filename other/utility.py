@@ -9,18 +9,16 @@ from discord.ext import commands, tasks
 from other.global_constants import *
 
 
-@tasks.loop(hours=1)
+@tasks.loop(hours=3)
 async def regularly_clean_score_database():
     """Removes outdated scores from the score database at regular intervals. Active when bot starts."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
-        cursor = await conn.cursor()
-        
         # Deletes scores older than 24 hours
-        await cursor.execute("DELETE FROM submitted_scores WHERE timestamp <= datetime('now', '-24 hours')")
+        await conn.execute("DELETE FROM submitted_scores WHERE timestamp <= datetime('now', '-24 hours')")
         await conn.commit()
 
-@tasks.loop(hours=6)
+@tasks.loop(hours=12)
 async def regularly_refresh_access_token():
     """
     The access token expires every 24 hours.
@@ -181,3 +179,55 @@ async def get_user_exp_bars(discord_id: int | None = None, osu_id: int | None = 
             user_exp_bars[exp_bar_name] = exp_bar
     
     return user_exp_bars
+
+async def get_user_currency(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, int]:
+    
+    if discord_id is not None:
+        osu_id = await get_osu_id(discord_id=discord_id)
+    elif osu_username is not None:
+        osu_id = await get_osu_id(osu_username=osu_username)
+    
+    async with aiosqlite.connect("./data/database.db") as conn:
+        conn.row_factory = aiosqlite.Row  # Allows the query to return a dict-like
+        cursor = await conn.execute("SELECT * FROM currency WHERE osu_id=?", (osu_id,))
+        row = await cursor.fetchone()
+        assert row is not None
+        
+    user_currency: dict[str, int] = {}
+    for currency_name in row.keys():
+        if currency_name == 'osu_id': continue  # Not a currency
+        user_currency[currency_name] = row[currency_name]
+
+    return user_currency
+
+def create_str_of_user_currency(user_currency: dict[str, int]) -> str:
+    output = ""
+    for currency_id, currency_amount in user_currency.items():
+        output += f"{currency_amount} {ANIMATED_CURRENCY_UNIT_EMOJIS[currency_id]}  "
+    return output
+
+def prettify_currency_db_name(currency_name: str) -> str:
+    pretty_currency_name = {
+        'taiko_tokens': "Taiko Tokens"
+    }
+    return pretty_currency_name[currency_name]
+
+async def get_user_upgrades(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, int]:
+    if discord_id is not None:
+        osu_id = await get_osu_id(discord_id=discord_id)
+    elif osu_username is not None:
+        osu_id = await get_osu_id(osu_username=osu_username)
+    
+    async with aiosqlite.connect("./data/database.db") as conn:
+        conn.row_factory = aiosqlite.Row  # Allows the query to return a dict-like
+        cursor = await conn.execute("SELECT * FROM upgrades WHERE osu_id=?", (osu_id,))
+        row = await cursor.fetchone()
+        assert row is not None
+
+    user_upgrades: dict[str, int] = {}
+    for upgrade_name in row.keys():
+        if upgrade_name == 'osu_id': continue  # Not an upgrade
+        user_upgrades[upgrade_name] = row[upgrade_name]
+
+    return user_upgrades
+

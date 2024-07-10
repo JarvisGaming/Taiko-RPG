@@ -1,8 +1,8 @@
 import asyncio
 
+import other.utility
 from discord.ext import commands
 from other.global_constants import *
-from other.utility import *
 
 
 class AdminCog(commands.Cog):
@@ -10,7 +10,7 @@ class AdminCog(commands.Cog):
         self.bot = bot
     
     @commands.command()
-    @is_admin()
+    @other.utility.is_admin()
     async def shutdown(self, ctx: commands.Context, seconds_to_wait_before_shutdown: int | str = 30, reason: str = "No reason provided."):
         """
         Disconnects the bot after a certain delay. 
@@ -18,15 +18,15 @@ class AdminCog(commands.Cog):
         """
         
         if seconds_to_wait_before_shutdown not in ["now", 0]:
-            await send_in_all_channels(f"**Bot will shut down in {seconds_to_wait_before_shutdown} seconds!** Reason: {reason}")
+            await other.utility.send_in_all_channels(f"**Bot will shut down in {seconds_to_wait_before_shutdown} seconds!** Reason: {reason}")
             await asyncio.sleep(seconds_to_wait_before_shutdown)  # type: ignore
         
-        await send_in_all_channels("Shutting down...")
+        await other.utility.send_in_all_channels("Shutting down...")
         await http_session.close_http_session()
         await bot.close()
     
     @commands.command()
-    @is_admin()
+    @other.utility.is_admin()
     async def reload(self, ctx: commands.Context, cog_name: str):
         """
         Reloads a specific extension specified by <cog_name>.
@@ -59,7 +59,7 @@ class AdminCog(commands.Cog):
                 await message.edit(content=f"{cog}.py successfully reloaded.")
     
     @commands.command()
-    @is_admin()
+    @other.utility.is_admin()
     async def sync(self, ctx: commands.Context):
         """Sync all slash commands to discord."""
         

@@ -1,9 +1,9 @@
-import aiosqlite
 import discord
+import other.utility
+from classes.exp_bar import ExpBar
 from discord import app_commands
 from discord.ext import commands
 from other.global_constants import *
-from other.utility import *
 
 
 class ProfileCog(commands.Cog):
@@ -12,15 +12,27 @@ class ProfileCog(commands.Cog):
     
     @app_commands.command(name="profile", description="Display all of a user's exp information")
     @app_commands.describe(osu_username="The player that you want to see the profile of (case sensitive). Leave blank to see your own.")
-    @is_verified()
+    @other.utility.is_verified()
     async def profile(self, interaction: discord.Interaction, osu_username: str | None = None):
         
         # osu_username is an optional field
         if osu_username is None:
-            osu_username = await get_osu_username(discord_id=interaction.user.id)
-            
-        user_exp_bars = await get_user_exp_bars(osu_username=osu_username)
-        embed = discord.Embed(title=f"{osu_username}'s EXP Stats", colour=discord.Colour.blurple())
+            osu_username = await other.utility.get_osu_username(discord_id=interaction.user.id)
+        
+        osu_id = await other.utility.get_osu_id(osu_username=osu_username)
+        assert osu_id is not None
+        
+        user_currency = await other.utility.get_user_currency(osu_id=osu_id)
+        user_exp_bars = await other.utility.get_user_exp_bars(osu_username=osu_username)
+        embed = discord.Embed(title=f"{osu_username}'s Profile", colour=discord.Colour.blurple())
+        
+        self.populate_profile_embed(user_currency, user_exp_bars, embed)
+        
+        await interaction.response.send_message(embed=embed)
+
+    def populate_profile_embed(self, user_currency: dict[str, int], user_exp_bars: dict[str, ExpBar], embed: discord.Embed):
+        for currency_id, currency_amount in user_currency.items():
+            embed.add_field(name='', value=f"{currency_amount} {ANIMATED_CURRENCY_UNIT_EMOJIS[currency_id]}", inline=False)
         
         for exp_bar_name, exp_bar in user_exp_bars.items():
             # Add exp information for that mod to the embed
@@ -33,8 +45,6 @@ class ProfileCog(commands.Cog):
                 embed.add_field(name=name_info, value=value_info, inline=False)
             else:
                 embed.add_field(name=name_info, value=value_info)
-        
-        await interaction.response.send_message(embed=embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(ProfileCog(bot))

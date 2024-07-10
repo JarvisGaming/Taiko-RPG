@@ -1,15 +1,15 @@
+import copy
 import datetime
 import math
 from typing import Any
 
-import aiohttp
 import aiosqlite
 import dateutil.parser
+import other.utility
 from classes.beatmap import Beatmap
 from classes.beatmapset import Beatmapset
 from classes.mod import Mod
 from other.global_constants import *
-from other.utility import get_discord_id
 
 
 class Score:
@@ -34,7 +34,6 @@ class Score:
     total_score: int  # Lazer score_info, so stable scores are scored w/ classic mod (vs legacy_total_score)
     max_combo: int  # In the score, not the map
     pp: float | None
-    ruleset_id: int  # I don't know what this does
     has_replay: bool
     is_FC: bool
     is_pass: bool
@@ -43,14 +42,17 @@ class Score:
     beatmap: Beatmap
     beatmapset: Beatmapset
     
-    exp_gained: dict[str, int]  # Exp bar names are the keys, amount of exp gained are the values
+    base_exp_gained: int
+    base_currency_gained: dict[str, int]  # Keys: Currency names, Values: Amount of currency gained
+    exp_gained_after_upgrades: dict[str, int]  # Keys: EXP bar names, Values: Amount of exp gained
+    currency_gained_after_upgrades: dict[str, int]  # Keys: Currency names, Values: Amount of currency gained
     
     @classmethod
-    async def create_score_object(cls, score_info: dict[str, Any]):
+    async def create_score_object(cls, score_info: dict[str, Any], user_upgrades: dict[str, int]):
         self = cls()
         self.username = score_info['user']['username']
         self.user_osu_id = score_info['user']['id']
-        self.user_discord_id = await self.__fetch_user_discord_id()
+        await self.__init_user_discord_id()
         
         self.score_id = score_info['id']
         self.score_url = f"https://osu.ppy.sh/scores/{self.score_id}"
@@ -61,13 +63,12 @@ class Score:
         self.accuracy = score_info['accuracy'] * 100  # Convert from 0.99 to 99 for example, since it's more intuitive
         self.rank = score_info['rank']
         self.mods = [Mod(mod_info) for mod_info in score_info['mods']]
-        self.mods_human_readable = self.__create_human_readable_mod_listing()
+        self.__init_human_readable_mod_listing()
         self.timestamp = dateutil.parser.parse(score_info['ended_at'])  # Converts ISO 8601 format timestamp to datetime object
         
         self.total_score = score_info['total_score']
         self.max_combo = score_info['max_combo']
         self.pp = score_info['pp']
-        self.ruleset_id = score_info['ruleset_id']
         self.has_replay = score_info['has_replay']
         self.is_FC = score_info['is_perfect_combo']
         self.is_pass = score_info['passed']
@@ -76,58 +77,84 @@ class Score:
         self.beatmap = Beatmap(score_info['beatmap'], await self.__get_sr_after_mods(score_info))
         self.beatmapset = Beatmapset(score_info['beatmapset'])
         
-        self.__init_exp_gained()
+        self.__init_base_exp_gained()
+        await self.__init_exp_gained_after_upgrades(user_upgrades)
+        self.__init_base_currency_gained()
+        await self.__init_currency_gained_after_upgrades(user_upgrades)
         
         return self
     
-    async def __fetch_user_discord_id(self) -> int:
-        discord_id = await get_discord_id(osu_id=self.user_osu_id)
+    async def __init_user_discord_id(self):
+        discord_id = await other.utility.get_discord_id(osu_id=self.user_osu_id)
         assert discord_id is not None  # You can't send a score without being verified
-        return discord_id
+        self.user_discord_id = discord_id
     
-    def __create_human_readable_mod_listing(self) -> str:
+    def __init_human_readable_mod_listing(self):
         """Create a human-readable listing of the mods used in the score."""
         
         mods_human_readable = ""
         for mod in self.mods:
             mods_human_readable += mod.acronym + " "
-        return mods_human_readable.strip()  # Remove trailing whitespace
+        self.mods_human_readable = mods_human_readable.strip()  # Remove trailing whitespace
     
-    def __init_exp_gained(self):
-        """
-        Initialize and set the exp gained for each mod. If there are no mods, only NoMod exp will be given.
-        Otherwise, split exp amongst activated exp bar mods.
-        """
-        
-        self.exp_gained = {exp_bar_name: 0 for exp_bar_name in EXP_BAR_NAMES}
-        self.exp_gained['Overall'] = self.__calculate_total_exp_gained()
-        number_of_exp_bar_mods_activated = self.__count_number_of_exp_bar_mods_activated()
-        
-        if number_of_exp_bar_mods_activated == 0:
-            self.exp_gained['NM'] = self.exp_gained['Overall']
-            return
-        
-        for mod in self.mods:
-            if mod.acronym in EXP_BAR_NAMES + ['NC', 'DC']:
-                
-                # NC and DC aren't exp bar names, but belong under DT and HT respectively
-                if mod.acronym == 'NC': mod_name = 'DT'
-                elif mod.acronym == 'DC': mod_name = 'HT'
-                else: mod_name = mod.acronym
-                
-                self.exp_gained[mod_name] = self.exp_gained['Overall'] // number_of_exp_bar_mods_activated
-        
-    def __calculate_total_exp_gained(self) -> int:
-        """Calculate the TOTAL exp gained from submitting a score based on a formula."""
-        
+    def __init_base_exp_gained(self):
+
         total_exp_gained = math.pow(max(3*self.num_300s + 0.75*self.num_100s - 3*self.num_misses, 0), 0.6) * min(self.beatmap.sr+1, 11) * 0.07
         
         # Punish incomplete scores according to how much of the map was played
         if not self.is_complete_runthrough_of_map():
             total_exp_gained *= math.log(self.map_completion_progress()+1, 2)
         
-        return int(total_exp_gained)
+        self.base_exp_gained = int(total_exp_gained)
 
+    async def __init_exp_gained_after_upgrades(self, user_upgrades: dict[str, int]):
+        self.exp_gained_after_upgrades = {exp_bar_name: 0 for exp_bar_name in EXP_BAR_NAMES}
+        self.exp_gained_after_upgrades['Overall'] = self.base_exp_gained
+        
+        self.__apply_upgrade_effect_on_exp_gain(user_upgrades)
+        
+        number_of_exp_bar_mods_activated = self.__count_number_of_exp_bar_mods_activated()
+        if number_of_exp_bar_mods_activated == 0:
+            self.exp_gained_after_upgrades['NM'] = self.exp_gained_after_upgrades['Overall']
+        
+        else:
+            for mod in self.mods:
+                if mod.acronym in EXP_BAR_NAMES + ['NC', 'DC']:
+                    
+                    # NC and DC aren't exp bar names, but belong under DT and HT respectively
+                    if mod.acronym == 'NC': mod_name = 'DT'
+                    elif mod.acronym == 'DC': mod_name = 'HT'
+                    else: mod_name = mod.acronym
+                    
+                    self.exp_gained_after_upgrades[mod_name] = self.exp_gained_after_upgrades['Overall'] // number_of_exp_bar_mods_activated
+        
+        # Lock all values as int
+        for exp_bar_name in self.exp_gained_after_upgrades.keys():
+            self.exp_gained_after_upgrades[exp_bar_name] = int(self.exp_gained_after_upgrades[exp_bar_name])
+
+    def __apply_upgrade_effect_on_exp_gain(self, user_upgrades):
+        if self.is_complete_runthrough_of_map():
+            self.exp_gained_after_upgrades['Overall'] += upgrade_manager.upgrades['exp_length_bonus'].effect(user_upgrades['exp_length_bonus'], self.beatmap.drain_time // 60)
+        self.exp_gained_after_upgrades['Overall'] *= upgrade_manager.upgrades['exp_gain_multiplier'].effect(user_upgrades['exp_gain_multiplier'])
+
+    def __init_base_currency_gained(self):
+        self.base_currency_gained = {}
+        self.base_currency_gained['taiko_tokens'] = (self.num_300s + self.num_100s) // 50
+
+    async def __init_currency_gained_after_upgrades(self, user_upgrades: dict[str, int]):
+        # Copy everything over, rewrite if necessary if some upgrades affect how the currency itself is acquired
+        self.currency_gained_after_upgrades = copy.deepcopy(self.base_currency_gained)
+        
+        self.__apply_upgrade_effect_on_currency_gain(user_upgrades)
+        
+        # Lock all values as int
+        for currency_name in self.currency_gained_after_upgrades.keys():
+            self.currency_gained_after_upgrades[currency_name] = int(self.currency_gained_after_upgrades[currency_name])
+
+    def __apply_upgrade_effect_on_currency_gain(self, user_upgrades):
+        self.currency_gained_after_upgrades['taiko_tokens'] = (self.num_300s + self.num_100s) // (50 - upgrade_manager.upgrades['tt_gain_efficiency'].effect(user_upgrades['tt_gain_efficiency']))
+        self.currency_gained_after_upgrades['taiko_tokens'] *= upgrade_manager.upgrades['tt_gain_multiplier'].effect(user_upgrades['tt_gain_multiplier'])
+        
     def __count_number_of_exp_bar_mods_activated(self) -> int:
         number_of_exp_bar_mods_activated = 0
         

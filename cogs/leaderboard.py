@@ -1,8 +1,9 @@
+import aiosqlite
+import other.utility
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 from other.global_constants import *
-from other.utility import *
 
 
 class LeaderboardCog(commands.Cog):
@@ -20,7 +21,7 @@ class LeaderboardCog(commands.Cog):
         Choice(name="HT", value="ht")
     ])
     @app_commands.describe(page="The page of the leaderboard you want to show. Leave blank to show the first page.")
-    @is_verified()
+    @other.utility.is_verified()
     async def leaderboard(self, interaction: discord.Interaction, leaderboard_type: Choice[str], page: int = 1):
         """
         Shows the leaderboard for a particular mod type, including the user's position.
