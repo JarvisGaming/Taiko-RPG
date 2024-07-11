@@ -52,7 +52,7 @@ class ShopCog(commands.Cog):
             embed.add_field(name='', value=text, inline=False)
     
     @app_commands.command(name="buy", description="Use this to buy upgrades and items!")
-    @app_commands.describe(times_to_purchase="How many times you want to buy the upgrade / item. Leave blank to buy 1. Enter a high number to buy max.")
+    @app_commands.describe(times_to_purchase="How many times you want to buy it. Leave blank to buy 1. Enter a high number to buy max.")
     @other.utility.is_verified()
     async def buy(self, interaction: discord.Interaction, thing_to_purchase_id: str, times_to_purchase: int = 1):
         if thing_to_purchase_id in upgrade_manager.upgrades.keys():

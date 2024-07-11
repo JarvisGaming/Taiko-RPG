@@ -30,7 +30,7 @@ class UpgradeManager:
     
         self.upgrades['tt_gain_efficiency'] = (Upgrade(
             name = "Taiko Token Gain Efficiency", 
-            description = r"-1 note hit needed to gain a Taiko Token",
+            description = r"-1 note hit needed to gain a Taiko Token. You gain a token every 50 hits by default",
             max_level = 20,
             cost_currency_unit = "taiko_tokens", 
             cost = lambda level: int(10 * pow(1.39, level-1)),
