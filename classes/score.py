@@ -229,6 +229,12 @@ class Score:
         
         return (self.num_300s + self.num_100s + self.num_misses) / self.beatmap.num_notes
     
+    def is_afk(self) -> bool:
+        """If the accuracy is below an arbitrary threshold, we can deduce that the player wasn't actually playing the map."""
+        if self.accuracy < 50:
+            return True
+        return False
+    
     def mod_is_in_score(self, mods_to_check_for: str | list[str]) -> bool:
         """
         Check if a mod(s) is in a score. Accepts a mod acronym or a list of mod acronyms.

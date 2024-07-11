@@ -209,6 +209,9 @@ class SubmitCog(commands.Cog):
         await conn.execute(query, (score.user_osu_id, score.beatmap.id, score.beatmapset.id, score.timestamp))
     
     async def update_user_exp_bars_in_database(self, conn: aiosqlite.Connection, score: Score):
+        if score.is_afk():
+            return
+        
         user_exp_bars = await other.utility.get_user_exp_bars(discord_id=score.user_discord_id)
         
         # Update user_exp_bars with new the new exp values
@@ -259,6 +262,10 @@ class SubmitCog(commands.Cog):
         if not score.is_complete_runthrough_of_map():
             map_completion_percentage = score.map_completion_progress() * 100
             embed.add_field(name=f"EXP Penalty: Restared / Quit out ({map_completion_percentage:.2f}% completed)", value='', inline=False)
+        
+        if score.is_afk():
+            embed.add_field(name=f"No EXP awarded: AFK", value='', inline=False)
+            return
         
         for exp_bar_name, amount_of_exp_gained in score.exp_gained_after_upgrades.items():
             if amount_of_exp_gained > 0:
