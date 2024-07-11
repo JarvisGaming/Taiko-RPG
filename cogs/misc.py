@@ -34,8 +34,9 @@ class MiscCog(commands.Cog):
         embed.add_field(name="2. Submit scores", value=text, inline=False)
         
         embed.add_field(name="3. See your stats", value="Use the `/profile` command to see how much EXP you have!", inline=False)
-        embed.add_field(name="4. Check the leaderboards", value="Use the `/leaderboard` command to see where you place on the leaderboard!", inline=False)
-        embed.add_field(name="5. Found a bug? Have any suggestions?", value="Talk about it in the #suggest-and-complain channel!", inline=False)
+        embed.add_field(name="4. Buy upgrades and items", value="Check out `/shop` and buy things that will help you on your journey!", inline=False)
+        embed.add_field(name="5. Check the leaderboards", value="Use the `/leaderboard` command to see where you place on the leaderboard!", inline=False)
+        embed.add_field(name="6. Found a bug? Have any suggestions?", value="Talk about it in the #suggest-and-complain channel!", inline=False)
         
         await interaction.response.send_message(embed=embed)
     
