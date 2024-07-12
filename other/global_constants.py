@@ -24,6 +24,8 @@ CURRENCY_UNITS: list[str] = ['taiko_tokens']
 CURRENCY_UNIT_EMOJIS: dict[str, str] = {'taiko_tokens': f"<:taiko_tokens:1259156904349794357>"}  # <emoji_name:emoji_id>
 ANIMATED_CURRENCY_UNIT_EMOJIS: dict[str, str] = {'taiko_tokens': f"<a:taiko_tokens_spinning:1259859321475305504>"}  # <a:emoji_name:emoji_id>
 
+NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN: int = 50
+
 osu_api = OssapiAsync(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), activity=discord.CustomActivity(name="🥁 banging your mother 🥁"), help_command=None)
 http_session = HttpSession()
