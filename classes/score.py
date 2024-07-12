@@ -74,7 +74,7 @@ class Score:
         self.is_pass = score_info['passed']
         self.is_convert = score_info['beatmap']['convert']
         
-        self.beatmap = Beatmap(score_info['beatmap'], await self.__get_sr_after_mods(score_info))
+        self.beatmap = Beatmap(score_info['beatmap'], await self.__get_sr_after_mods(score_info), self)
         self.beatmapset = Beatmapset(score_info['beatmapset'])
         
         self.__init_base_exp_gained()
@@ -134,12 +134,14 @@ class Score:
 
     def __apply_upgrade_effect_on_exp_gain(self, user_upgrades):
         if self.is_complete_runthrough_of_map():
-            self.exp_gained_after_upgrades['Overall'] += upgrade_manager.upgrades['exp_length_bonus'].effect(user_upgrades['exp_length_bonus'], self.beatmap.drain_time // 60)
-        self.exp_gained_after_upgrades['Overall'] *= upgrade_manager.upgrades['exp_gain_multiplier'].effect(user_upgrades['exp_gain_multiplier'])
+            exp_length_bonus_effect = upgrade_manager.upgrades['exp_length_bonus'].effect(user_upgrades['exp_length_bonus'], self.beatmap.drain_time // 60)
+            self.exp_gained_after_upgrades['Overall'] += exp_length_bonus_effect
+        exp_gain_multiplier_effect = upgrade_manager.upgrades['exp_gain_multiplier'].effect(user_upgrades['exp_gain_multiplier'])
+        self.exp_gained_after_upgrades['Overall'] *= exp_gain_multiplier_effect
 
     def __init_base_currency_gained(self):
         self.base_currency_gained = {}
-        self.base_currency_gained['taiko_tokens'] = (self.num_300s + self.num_100s) // 50
+        self.base_currency_gained['taiko_tokens'] = (self.num_300s + self.num_100s) // NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN
 
     async def __init_currency_gained_after_upgrades(self, user_upgrades: dict[str, int]):
         # Copy everything over, rewrite if necessary if some upgrades affect how the currency itself is acquired
@@ -152,7 +154,8 @@ class Score:
             self.currency_gained_after_upgrades[currency_name] = int(self.currency_gained_after_upgrades[currency_name])
 
     def __apply_upgrade_effect_on_currency_gain(self, user_upgrades):
-        self.currency_gained_after_upgrades['taiko_tokens'] = (self.num_300s + self.num_100s) // (50 - upgrade_manager.upgrades['tt_gain_efficiency'].effect(user_upgrades['tt_gain_efficiency']))
+        note_hit_reduction_per_taiko_token = upgrade_manager.upgrades['tt_gain_efficiency'].effect(user_upgrades['tt_gain_efficiency'])
+        self.currency_gained_after_upgrades['taiko_tokens'] = (self.num_300s + self.num_100s) // (NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN - note_hit_reduction_per_taiko_token)
         self.currency_gained_after_upgrades['taiko_tokens'] *= upgrade_manager.upgrades['tt_gain_multiplier'].effect(user_upgrades['tt_gain_multiplier'])
         
     def __count_number_of_exp_bar_mods_activated(self) -> int:
