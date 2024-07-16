@@ -19,6 +19,12 @@ class ProfileCog(commands.Cog):
         if osu_username is None:
             osu_username = await other.utility.get_osu_username(discord_id=interaction.user.id)
         
+        # Check if the user is in the database
+        if not await other.utility.user_is_in_database(osu_username=osu_username):
+            await interaction.response.send_message("Player not found!")
+            return
+        
+        # osu_id is needed to search data in the currency table
         osu_id = await other.utility.get_osu_id(osu_username=osu_username)
         assert osu_id is not None
         

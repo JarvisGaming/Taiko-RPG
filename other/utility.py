@@ -103,6 +103,24 @@ def create_str_of_allowed_mods() -> str:
     
     return new_message.strip()  # Removes trailing space
 
+async def user_is_in_database(osu_id: int | None = None, discord_id: int | None = None, osu_username: str | None = None) -> bool:
+    """Checks if user is in the database."""
+    
+    async with aiosqlite.connect("./data/database.db") as conn:
+        cursor = await conn.cursor()
+        
+        # Tries to find the user in the database
+        if osu_id is not None:
+            await cursor.execute("SELECT 1 FROM exp_table WHERE osu_id=?", (osu_id,))
+        
+        elif discord_id is not None:
+            await cursor.execute("SELECT 1 FROM exp_table WHERE discord_id=?", (discord_id,))
+            
+        elif osu_username is not None:
+            await cursor.execute("SELECT 1 FROM exp_table WHERE osu_username=?", (osu_username,))
+        
+        return await cursor.fetchone() is not None
+
 async def get_osu_id(discord_id: int | None = None, osu_username: str | None = None) -> int | None:
     """Returns None if not found in database."""
     
