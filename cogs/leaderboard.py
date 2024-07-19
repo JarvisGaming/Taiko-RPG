@@ -1,3 +1,5 @@
+import math
+
 import aiosqlite
 import other.utility
 from discord import app_commands
@@ -62,7 +64,7 @@ class LeaderboardCog(commands.Cog):
         data = await cursor.fetchone()
         
         assert data is not None
-        num_pages: int = data[0] // num_results_displayed_per_page + 1
+        num_pages: int = math.ceil(data[0] / num_results_displayed_per_page)
         return num_pages
     
     async def page_is_out_of_range(self, page: int, num_pages: int) -> bool:
