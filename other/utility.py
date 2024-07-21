@@ -42,6 +42,23 @@ async def regularly_refresh_access_token():
         dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])  # Global
         print(f"{datetime.datetime.now()}: Access token refreshed")
 
+@tasks.loop(hours=1)
+async def regularly_backup_database():
+    google_auth.Refresh()  # Refreshes access token, which expires after 1 hour
+
+    TAIKO_RPG_FOLDER_ID = "1UIregYRQZzmNmPcJdwJBtK9Y7N187fDh"
+    current_datetime = datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
+    metadata = {
+        'parents': [
+            {"id": TAIKO_RPG_FOLDER_ID}
+        ],
+        'title': f"{current_datetime}.db",
+        'mimeType': "multipart/form-data"
+    }
+    file = google_drive.CreateFile(metadata=metadata)
+    file.SetContentFile("./data/database.db")
+    file.Upload()
+
 def is_admin():
     """
     Decorator. Checks if user is an admin.
