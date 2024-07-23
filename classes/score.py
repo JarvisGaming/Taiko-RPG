@@ -134,7 +134,7 @@ class Score:
 
     def __apply_upgrade_effect_on_exp_gain(self, user_upgrades):
         if self.is_complete_runthrough_of_map():
-            exp_length_bonus_effect = upgrade_manager.upgrades['exp_length_bonus'].effect(user_upgrades['exp_length_bonus'], self.beatmap.drain_time // 60)
+            exp_length_bonus_effect = upgrade_manager.upgrades['exp_length_bonus'].effect(user_upgrades['exp_length_bonus'], self.beatmap.drain_time)
             self.exp_gained_after_upgrades['Overall'] += exp_length_bonus_effect
         exp_gain_multiplier_effect = upgrade_manager.upgrades['exp_gain_multiplier'].effect(user_upgrades['exp_gain_multiplier'])
         self.exp_gained_after_upgrades['Overall'] *= exp_gain_multiplier_effect

@@ -16,7 +16,7 @@ class UpgradeManager:
             max_level = 10, 
             cost_currency_unit = "taiko_tokens", 
             cost = lambda level: 50 * pow(level, 2),
-            effect = lambda level, drain_time_minutes: level * drain_time_minutes  # additional EXP gained from upgrade
+            effect = lambda level, drain_time: level * drain_time // 60  # additional EXP gained from upgrade
         ))
         
         self.upgrades['exp_gain_multiplier'] = (Upgrade(
