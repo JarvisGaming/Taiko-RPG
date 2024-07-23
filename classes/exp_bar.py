@@ -10,6 +10,10 @@ class ExpBar:
         self.total_exp = total_exp
         self.__update_bar_based_on_total_exp()
     
+    def add_exp(self, amount_of_exp_added: int):
+        self.total_exp += amount_of_exp_added
+        self.__update_bar_based_on_total_exp()
+    
     def __update_bar_based_on_total_exp(self):
         current_exp = self.total_exp
         current_level = 1
@@ -27,7 +31,3 @@ class ExpBar:
         self.level = current_level
         self.exp_progress_to_next_level = exp_progress_to_next_level
         self.exp_required_for_next_level = exp_required_for_next_level
-    
-    def add_exp(self, amount_of_exp_added: int):
-        self.total_exp += amount_of_exp_added
-        self.__update_bar_based_on_total_exp()
