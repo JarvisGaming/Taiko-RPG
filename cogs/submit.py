@@ -217,7 +217,7 @@ class SubmitCog(commands.Cog):
         # Update user_exp_bars with new the new exp values
         for exp_bar_name, amount_of_exp_gained in score.exp_gained_after_upgrades.items():
             if amount_of_exp_gained > 0:
-                user_exp_bars[exp_bar_name].add_exp_to_expbar(amount_of_exp_gained)
+                user_exp_bars[exp_bar_name].add_exp(amount_of_exp_gained)
         
         # Write to db
         for exp_bar_name, exp_bar in user_exp_bars.items():
