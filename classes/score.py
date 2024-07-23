@@ -113,7 +113,7 @@ class Score:
         
         self.__apply_upgrade_effect_on_exp_gain(user_upgrades)
         
-        number_of_exp_bar_mods_activated = self.__count_number_of_exp_bar_mods_activated()
+        number_of_exp_bar_mods_activated = self.count_number_of_exp_bar_mods_activated()
         if number_of_exp_bar_mods_activated == 0:
             self.exp_gained_after_upgrades['NM'] = self.exp_gained_after_upgrades['Overall']
         
@@ -158,7 +158,7 @@ class Score:
         self.currency_gained_after_upgrades['taiko_tokens'] = (self.num_300s + self.num_100s) // (NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN - note_hit_reduction_per_taiko_token)
         self.currency_gained_after_upgrades['taiko_tokens'] *= upgrade_manager.upgrades['tt_gain_multiplier'].effect(user_upgrades['tt_gain_multiplier'])
         
-    def __count_number_of_exp_bar_mods_activated(self) -> int:
+    def count_number_of_exp_bar_mods_activated(self) -> int:
         number_of_exp_bar_mods_activated = 0
         
         for mod in self.mods:
