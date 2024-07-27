@@ -10,7 +10,7 @@ class AdminCog(commands.Cog):
         self.bot = bot
     
     @commands.command()
-    @other.utility.is_admin()
+    @commands.is_owner()
     async def shutdown(self, ctx: commands.Context, seconds_to_wait_before_shutdown: int | str = 30, reason: str = "No reason provided."):
         """
         Disconnects the bot after a certain delay. 
@@ -26,7 +26,7 @@ class AdminCog(commands.Cog):
         await bot.close()
     
     @commands.command()
-    @other.utility.is_admin()
+    @commands.is_owner()
     async def reload(self, ctx: commands.Context, cog_name: str):
         """
         Reloads a specific extension specified by <cog_name>.
@@ -59,7 +59,7 @@ class AdminCog(commands.Cog):
                 await message.edit(content=f"{cog}.py successfully reloaded.")
     
     @commands.command()
-    @other.utility.is_admin()
+    @commands.is_owner()
     async def sync(self, ctx: commands.Context):
         """Sync all slash commands to discord."""
         
