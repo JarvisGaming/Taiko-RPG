@@ -247,7 +247,7 @@ def prettify_currency_db_name(currency_name: str) -> str:
     }
     return pretty_currency_name[currency_name]
 
-async def get_user_upgrades(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, int]:
+async def get_user_upgrade_levels(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, int]:
     if discord_id is not None:
         osu_id = await get_osu_id(discord_id=discord_id)
     elif osu_username is not None:
@@ -259,10 +259,10 @@ async def get_user_upgrades(discord_id: int | None = None, osu_id: int | None = 
         row = await cursor.fetchone()
         assert row is not None
 
-    user_upgrades: dict[str, int] = {}
+    user_upgrade_levels: dict[str, int] = {}
     for upgrade_name in row.keys():
         if upgrade_name == 'osu_id': continue  # Not an upgrade
-        user_upgrades[upgrade_name] = row[upgrade_name]
+        user_upgrade_levels[upgrade_name] = row[upgrade_name]
 
-    return user_upgrades
+    return user_upgrade_levels
 

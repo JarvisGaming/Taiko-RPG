@@ -1,54 +1,126 @@
+import inspect
+from typing import TYPE_CHECKING
+
 import aiosqlite
 import discord
 import other.utility
+from classes.buff_effect import BuffEffect, BuffEffectType
 from classes.upgrade import Upgrade
 
+if TYPE_CHECKING:
+    from classes.exp_bar import ExpBar
+    from classes.score import Score
+
+NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN: int = 50  # fix later
 
 class UpgradeManager:
 
     upgrades: dict[str, Upgrade]  # upgrade_id: upgrade
+    # and then in the future we can have other buff related stuff here
 
     def __init__(self):
+        
+        # this should be moved to its own separate file in the future
         self.upgrades = {}
+        
+        def exp_length_bonus_effect(upgrade_level: int, score: "Score", exp_bar_exp_gain: dict[str, int]):
+            if score.is_complete_runthrough_of_map():
+                drain_time_minutes = score.beatmap.drain_time // 60
+                exp_bar_exp_gain['Overall'] += (upgrade_level * drain_time_minutes)
+        
         self.upgrades['exp_length_bonus'] = (Upgrade(
+            id = "exp_length_bonus",
             name = "EXP Length Bonus", 
-            description = r"+1 EXP per minute of drain time per level (applies to maps you've fully completed)",
+            description = "+1 EXP per minute of drain time per level (applies to maps you've fully completed)",
             max_level = 10, 
             cost_currency_unit = "taiko_tokens", 
             cost = lambda level: 50 * pow(level, 2),
-            effect = lambda level, drain_time: level * drain_time // 60  # additional EXP gained from upgrade
+            effect = BuffEffect.OVERALL_EXP_GAIN,
+            effect_type = BuffEffectType.ADDITIVE,
+            effect_impl = exp_length_bonus_effect,
         ))
         
-        self.upgrades['exp_gain_multiplier'] = (Upgrade(
-            name = "EXP Gain Multiplier", 
-            description = r"+1% EXP gain (additive)",
+        def overall_exp_gain_multiplier_effect(upgrade_level: int, exp_bar_exp_gain: dict[str, int]):
+            exp_bar_exp_gain['Overall'] = int(exp_bar_exp_gain['Overall'] * (1 + 0.01 * upgrade_level))
+        
+        self.upgrades['overall_exp_gain_multiplier'] = (Upgrade(
+            id = "overall_exp_gain_multiplier",
+            name = "Overall EXP Gain Multiplier", 
+            description = "+1% Overall EXP gain per level (additive)",
             max_level = 50,
             cost_currency_unit = "taiko_tokens", 
             cost = lambda level: 15*level,
-            effect = lambda level: 1 + 0.01 * level  # EXP mult from upgrade
+            effect = BuffEffect.OVERALL_EXP_GAIN,
+            effect_type = BuffEffectType.MULTIPLICATIVE,
+            effect_impl = overall_exp_gain_multiplier_effect,
         ))
+        def tt_gain_efficiency_effect(upgrade_level: int, score: "Score", currency_gain: dict[str, int]):
+            currency_gain['taiko_tokens'] = score.note_hits // (NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN - upgrade_level)
     
         self.upgrades['tt_gain_efficiency'] = (Upgrade(
+            id = "tt_gain_efficiency",
             name = "Taiko Token Gain Efficiency", 
-            description = r"-1 note hit needed to gain a Taiko Token. You gain a token every 50 hits by default",
+            description = f"-1 note hit needed to gain a Taiko Token. You gain a token every {NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN} hits by default",
             max_level = 20,
             cost_currency_unit = "taiko_tokens", 
             cost = lambda level: int(10 * pow(1.39, level-1)),
-            effect = lambda level: level  # How many less note hits needed per Taiko Token
+            effect = BuffEffect.TAIKO_TOKEN_GAIN,
+            effect_type = BuffEffectType.ADDITIVE,
+            effect_impl = tt_gain_efficiency_effect,
         ))
         
+        def tt_gain_multiplier_effect(upgrade_level: int, currency_gain: dict[str, int]):
+            currency_gain['taiko_tokens'] = int(currency_gain['taiko_tokens'] * (1 + 0.02 * upgrade_level))
+        
         self.upgrades['tt_gain_multiplier'] = (Upgrade(
+            id = "tt_gain_multiplier",
             name = "Taiko Token Gain Multiplier", 
-            description = r"+2% Taiko Token gain (additive)",
+            description = "+2% Taiko Token gain per level (additive)",
             max_level = 50,
             cost_currency_unit = "taiko_tokens", 
             cost = lambda level: int(25 * pow(1.1, level-1)),
-            effect = lambda level: 1 + 0.02 * level  # Taiko Token mult from upgrade
+            effect = BuffEffect.TAIKO_TOKEN_GAIN,
+            effect_type = BuffEffectType.MULTIPLICATIVE,
+            effect_impl = tt_gain_multiplier_effect,
         ))
     
     def get_upgrade(self, upgrade_id: str) -> Upgrade | None:
         return self.upgrades.get(upgrade_id, None)
     
+    def apply_upgrade_effect(self, upgrade: Upgrade, upgrade_level: int, score: "Score", user_exp_bars: dict[str, "ExpBar"] | None = None, 
+                             exp_bar_exp_gain: dict[str, int] | None = None, currency_gain: dict[str, int] | None = None):
+        """Applies an upgrade effect given some upgrade, its level, and the things that it affects."""
+        
+        # Determine the parameters needed to be passed as a tuple
+        parameters_needed = inspect.getfullargspec(upgrade.effect_impl).args
+
+        # Add the necessary parameters as a dict
+        parameters_to_be_passed = {}
+        
+        for parameter in parameters_needed:
+            
+            # self is not a parameter you need to pass in
+            if parameter == 'self':
+                continue
+            
+            elif parameter == 'upgrade_level':
+                parameters_to_be_passed[parameter] = upgrade_level
+            
+            elif parameter =='score':
+                parameters_to_be_passed[parameter] = score
+            
+            elif parameter == 'user_exp_bars':
+                parameters_to_be_passed[parameter] = user_exp_bars
+                
+            elif parameter == 'exp_bar_exp_gain':
+                parameters_to_be_passed[parameter] = exp_bar_exp_gain
+                
+            elif parameter == 'currency_gain':
+                parameters_to_be_passed[parameter] = currency_gain
+                
+        # Unpack dict and pass it in
+        upgrade.effect_impl(**parameters_to_be_passed)
+
     async def process_upgrade_purchase(self, interaction: discord.Interaction, upgrade_id: str, times_to_purchase: int):
         await interaction.response.send_message(f"Processing upgrade purchase...")
         
@@ -58,28 +130,28 @@ class UpgradeManager:
         
         for _ in range(times_to_purchase):
             user_currency = await other.utility.get_user_currency(discord_id=interaction.user.id)
-            user_upgrades = await other.utility.get_user_upgrades(discord_id=interaction.user.id)
+            user_upgrade_levels = await other.utility.get_user_upgrade_levels(discord_id=interaction.user.id)
             
-            current_upgrade_level = user_upgrades[upgrade_id]
-            upgrade_cost = upgrade.cost(user_upgrades[upgrade_id]+1)
+            current_upgrade_level = user_upgrade_levels[upgrade_id]
+            upgrade_cost = upgrade.cost(user_upgrade_levels[upgrade_id]+1)
             
             if current_upgrade_level >= upgrade.max_level:
                 if upgrade_levels_purchased == 0:
                     await interaction.followup.send(f"You already maxed out {upgrade.name}!")
                 break
             
-            if not await self.user_has_enough_currency(upgrade, user_currency, upgrade_cost):
+            if not await self.__user_has_enough_currency(upgrade, user_currency, upgrade_cost):
                 if upgrade_levels_purchased == 0:
                     await interaction.followup.send(f"You don't have enough currency to purchase {upgrade.name} (Level {current_upgrade_level+1})!")
                 break
             
-            await self.update_database_from_purchase(interaction, upgrade_id, upgrade, user_currency, current_upgrade_level, upgrade_cost)
+            await self.__update_database_from_purchase(interaction, upgrade_id, upgrade, user_currency, current_upgrade_level, upgrade_cost)
             upgrade_levels_purchased += 1
             
         if upgrade_levels_purchased != 0:
             await interaction.followup.send(f"Purchased {upgrade_levels_purchased} level(s) of {upgrade.name}!")
 
-    async def update_database_from_purchase(self, interaction: discord.Interaction, upgrade_id: str, upgrade: Upgrade, 
+    async def __update_database_from_purchase(self, interaction: discord.Interaction, upgrade_id: str, upgrade: Upgrade, 
                                             user_currency: dict[str, int], current_upgrade_level: int, upgrade_cost: int):
         osu_id = await other.utility.get_osu_id(discord_id=interaction.user.id)
         async with aiosqlite.connect("./data/database.db") as conn:
@@ -94,7 +166,7 @@ class UpgradeManager:
             await conn.commit()
         
 
-    async def user_has_enough_currency(self, upgrade: Upgrade, user_currency: dict[str, int], upgrade_cost: int):
+    async def __user_has_enough_currency(self, upgrade: Upgrade, user_currency: dict[str, int], upgrade_cost: int):
         if upgrade_cost > user_currency[upgrade.cost_currency_unit]:
             return False
         return True
