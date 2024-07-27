@@ -37,11 +37,11 @@ class SubmitCog(commands.Cog):
         Choice(name="No", value=0)
     ])
     @app_commands.describe(number_of_scores_to_submit="How many recent scores you want to submit (capped at 100). Leave blank to submit up to 100.")
-    @app_commands.checks.cooldown(rate=1, per=300.0)
+    @app_commands.checks.dynamic_cooldown(other.utility.command_cooldown_for_live_bot)
     @other.utility.is_verified()
     async def submit(self, interaction: discord.Interaction, display_each_score: Choice[int], number_of_scores_to_submit: int = 100):
         
-        # Slash commands time out after 3 seconds, so we send a response first in case the API requests take too long
+        # Slash commands time out after 3 seconds, so we send a response first in case the command takes too long to execute
         await interaction.response.send_message("Finding scores...")
         
         user_exp_bars_before_submission = await other.utility.get_user_exp_bars(discord_id=interaction.user.id)

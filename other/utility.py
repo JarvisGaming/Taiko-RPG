@@ -1,11 +1,13 @@
 import datetime
+import os
+from typing import Optional
 
 import aiosqlite
 import dotenv
 from classes.exp_bar import ExpBar
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import tasks
 from other.global_constants import *
 
 
@@ -59,24 +61,6 @@ async def regularly_backup_database():
     file.SetContentFile("./data/database.db")
     file.Upload()
 
-def is_admin():
-    """
-    Decorator. Checks if user is an admin.
-    If user isn't an admin, sends a message and returns False. Returns True otherwise.
-    All admin commands are text commands, so we use commands and not app_commands.
-    """
-    
-    async def predicate(ctx: commands.Context):
-        """The check in question."""
-
-        if ctx.author.id not in ADMIN_ID_LIST:
-            await ctx.send("You're not an admin!")
-            return False
-        return True
-    
-    # Adds the check
-    return commands.check(predicate)
-
 def is_verified():
     """
     Decorator. Checks if user is verified.
@@ -109,6 +93,12 @@ async def send_in_all_channels(message: str):
         channel = bot.get_channel(channel_id)
         await channel.send(message)  # type: ignore
         
+def command_cooldown_for_live_bot(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
+    """Makes certain commands (eg submit) have a cooldown on the live version of the bot, while disabling it for the test version."""
+    if os.getcwd().endswith("test"):
+        return None
+    return app_commands.Cooldown(rate=1, per=300.0)
+    
 def create_str_of_allowed_mods() -> str:
     """Creates a string listing all currently accepted mods."""
     
