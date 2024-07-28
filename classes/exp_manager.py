@@ -26,6 +26,7 @@ class ExpManager:
     async def process_one_score(self, score: Score) -> dict[str, int]:
         """Calculate the exp gained from a score and update database accordingly. Returns the exp gained from the score for display purposes."""
         
+        self.debug_log = []
         original_exp_bar_exp_gain = self.__calculate_exp_bar_exp_of_score_before_buffs(score)
         self.debug_log.append(f"original_exp_bar_exp_gain: {original_exp_bar_exp_gain}")
         new_exp_bar_exp_gain = self.__calculate_exp_bar_exp_of_score_after_buffs(score, original_exp_bar_exp_gain)
