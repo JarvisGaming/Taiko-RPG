@@ -61,6 +61,34 @@ async def regularly_backup_database():
     file.SetContentFile("./data/database.db")
     file.Upload()
 
+async def buffs_are_synced_with_database() -> bool:
+    """
+    Checks if all the buffs in the managers are present in the database. 
+    Warns user if the buffs in the code and database don't match.
+    """
+    
+    upgrades_are_synced: bool = True
+    
+    async with aiosqlite.connect("./data/database.db") as conn:
+        cursor = await conn.cursor()
+        
+        # Checking upgrades
+        upgrades_in_code = [upgrade_id for upgrade_id in upgrade_manager.upgrades.keys()]
+        
+        await cursor.execute("SELECT name FROM pragma_table_info('upgrades') WHERE name != 'osu_id'")
+        data = await cursor.fetchall()
+        upgrades_in_database = [row[0] for row in data]
+            
+        if sorted(upgrades_in_code) != sorted(upgrades_in_database):
+            upgrades_are_synced = False
+    
+    if not upgrades_are_synced:
+        print("WARNING: Upgrades aren't synced in database!")
+        print(f"Outlier in code: {set(upgrades_in_code) - set(upgrades_in_database)}")
+        print(f"Outlier in database: {set(upgrades_in_database) - set(upgrades_in_code)}")
+    
+    return upgrades_are_synced
+        
 def is_verified():
     """
     Decorator. Checks if user is verified.
