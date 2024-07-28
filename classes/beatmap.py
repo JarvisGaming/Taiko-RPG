@@ -35,7 +35,6 @@ class Beatmap:
         self.num_spinners = beatmap_info['count_spinners']
         self.__init_drain_time(beatmap_info, score)
         self.status = beatmap_info['status']
-        print(beatmap_attributes, flush=True)
     
     def __init_od(self, beatmap_info: dict[str, Any], score: 'Score'):
         self.od = beatmap_info['accuracy']
