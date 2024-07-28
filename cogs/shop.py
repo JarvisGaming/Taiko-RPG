@@ -35,7 +35,7 @@ class ShopCog(commands.Cog):
             currency_emoji = ANIMATED_CURRENCY_UNIT_EMOJIS[upgrade.cost_currency_unit]
             upgrade_description = upgrade.description
             
-            if current_upgrade_level == max_level:
+            if current_upgrade_level >= max_level:
                 text = f"""
                         **{upgrade_name} [Level {current_upgrade_level}/{max_level}]**
                         {upgrade_description}\n
