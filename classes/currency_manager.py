@@ -11,25 +11,25 @@ class CurrencyManager:
     initial_user_currency: dict[str, int]  # Before all score submissions
     current_user_currency: dict[str, int]  # Updated after each score submission
     user_upgrade_levels: dict[str, int]
+    debug_log: list[str]
     
     def __init__(self, initial_user_currency: dict[str, int], user_upgrade_levels: dict[str, int]):
         self.initial_user_currency = initial_user_currency
         self.current_user_currency = copy.deepcopy(self.initial_user_currency)  # Deep copy to prevent the two from pointing to the same dict
         self.user_upgrade_levels = user_upgrade_levels
+        self.debug_log = []
     
     async def process_one_score(self, score: Score) -> dict[str, int]:
         """Calculate the currency gained from a score and update database accordingly. Returns the currency gained from the score for display purposes."""
         
+        self.debug_log.clear()
         original_currency_gain = self.__calculate_currency_of_score_before_buffs(score)
-        
-        print("original_currency_gain:", original_currency_gain)  # debug
-        
+        self.debug_log.append(f"original_currency_gain: {original_currency_gain}")
         new_currency_gain = self.__calculate_currency_of_score_after_buffs(score, original_currency_gain)
+        self.debug_log.append(f"new_currency_gain: {new_currency_gain}")
         
-        print("new_currency_gain", new_currency_gain)  # debug
-        
+        # Update database based on currency manager attributes
         self.__update_user_currency_locally(new_currency_gain)
-        
         await self.__update_user_currency_in_database(score)
         
         return new_currency_gain
@@ -51,8 +51,8 @@ class CurrencyManager:
                 if upgrade.effect_type == current_upgrade_priority and upgrade.effect in [BuffEffect.TAIKO_TOKEN_GAIN]:
                     upgrade_level = self.user_upgrade_levels[upgrade.id]
                     upgrade_manager.apply_upgrade_effect(upgrade=upgrade, upgrade_level=upgrade_level, score=score, currency_gain=new_currency_gain)
-                    print(f"upgrade applied: {upgrade.name}", flush=True)  # debug
-                    print(f"after upgrade applied:", new_currency_gain, flush=True) # debug
+                    self.debug_log.append(f"upgrade applied: {upgrade.name}")
+                    self.debug_log.append(f"after upgrade applied: {new_currency_gain}")
     
     def __update_user_currency_locally(self, new_currency_gain: dict[str, int]):
         for currency_name in CURRENCY_UNITS:

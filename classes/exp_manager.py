@@ -15,33 +15,26 @@ class ExpManager:
     initial_user_exp_bars: dict[str, "ExpBar"]  # Before all score submissions
     current_user_exp_bars: dict[str, "ExpBar"]  # Updated after each score submission
     user_upgrade_levels: dict[str, int]
+    debug_log: list[str]
     
     def __init__(self, initial_user_exp_bars: dict[str, "ExpBar"], user_upgrade_levels: dict[str, int]):
         self.initial_user_exp_bars = initial_user_exp_bars
         self.current_user_exp_bars = copy.deepcopy(self.initial_user_exp_bars)  # Deep copy to prevent the two from pointing to the same dict
         self.user_upgrade_levels = user_upgrade_levels
+        self.debug_log = []
     
     async def process_one_score(self, score: Score) -> dict[str, int]:
         """Calculate the exp gained from a score and update database accordingly. Returns the exp gained from the score for display purposes."""
         
-        # calculate exp of score before buffs
         original_exp_bar_exp_gain = self.__calculate_exp_bar_exp_of_score_before_buffs(score)
-        
-        print("original_exp_bar_exp_gain:", original_exp_bar_exp_gain)  # debug
-        
-        # calculate exp of score after buffs
+        self.debug_log.append(f"original_exp_bar_exp_gain: {original_exp_bar_exp_gain}")
         new_exp_bar_exp_gain = self.__calculate_exp_bar_exp_of_score_after_buffs(score, original_exp_bar_exp_gain)
+        self.debug_log.append(f"new_exp_bar_exp_gain: {new_exp_bar_exp_gain}")
         
-        print("new_exp_bar_exp_gain", new_exp_bar_exp_gain)  # debug
-        
-        # update user exp bars locally in the class
+        # Update database based on exp manager attributes
         self.__update_user_exp_bars_locally(new_exp_bar_exp_gain)
-        
-        # update exp in db
         await self.__update_user_exp_in_database(score)
         
-        # exp display should be in submit.py, since embed displaying is mostly a part of commands
-        # pass back related information, including updated user exp bars
         return new_exp_bar_exp_gain
     
     def __calculate_overall_exp_of_score_before_buffs(self, score: Score) -> int:
@@ -112,8 +105,8 @@ class ExpManager:
                 if upgrade.effect_type == current_upgrade_priority and upgrade.effect == BuffEffect.OVERALL_EXP_GAIN:
                     upgrade_level = self.user_upgrade_levels[upgrade.id]
                     upgrade_manager.apply_upgrade_effect(upgrade=upgrade, upgrade_level=upgrade_level, score=score, exp_bar_exp_gain=new_exp_bar_exp_gain, user_exp_bars=self.current_user_exp_bars)
-                    print(f"upgrade applied: {upgrade.name}", flush=True)  # debug
-                    print(f"after upgrade applied:", new_exp_bar_exp_gain, flush=True) # debug
+                    self.debug_log.append(f"upgrade applied: {upgrade.name}")
+                    self.debug_log.append(f"after upgrade applied: {new_exp_bar_exp_gain}")
 
     def __apply_upgrade_effects_to_exp_bar_exp(self, score: Score, new_exp_bar_exp_gain: dict[str, int]):
         
@@ -123,8 +116,8 @@ class ExpManager:
                 if upgrade.effect_type == current_upgrade_priority and upgrade.effect in [BuffEffect.NM_EXP_GAIN, BuffEffect.HD_EXP_GAIN, BuffEffect.HR_EXP_GAIN, BuffEffect.HR_EXP_GAIN, BuffEffect.DT_EXP_GAIN, BuffEffect.HT_EXP_GAIN]:
                     upgrade_level = self.user_upgrade_levels[upgrade.id]
                     upgrade_manager.apply_upgrade_effect(upgrade=upgrade, upgrade_level=upgrade_level, score=score, exp_bar_exp_gain=new_exp_bar_exp_gain, user_exp_bars=self.current_user_exp_bars)
-                    print(f"upgrade applied: {upgrade.name}", flush=True)  # debug
-                    print(f"after upgrade applied:", new_exp_bar_exp_gain, flush=True) # debug
+                    self.debug_log.append(f"upgrade applied: {upgrade.name}")
+                    self.debug_log.append(f"after upgrade applied: {new_exp_bar_exp_gain}")
     
     def recaulcate_overall_exp_based_on_exp_bar_exp(self, new_exp_bar_exp_gain: dict[str, int]):
         recalculated_overall_exp = 0

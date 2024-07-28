@@ -83,12 +83,11 @@ class SubmitCog(commands.Cog):
 
     async def process_and_display_score_impl(self, webhook: discord.Webhook, display_each_score: Choice[int], all_scores: list[dict[str, Any]], 
                                              exp_manager: ExpManager, currency_manager: CurrencyManager):
-        file = open("./data/scores.txt", "w")
+        debug_file = open("./data/scores.txt", "w")
         
         for score_info in all_scores:
                 
             score = await Score.create_score_object(score_info)
-            self.write_one_score_to_debug_file(file, score)
 
             if not await self.score_is_valid(webhook, score, display_each_score):
                 continue
@@ -96,13 +95,15 @@ class SubmitCog(commands.Cog):
             exp_gained_from_score = await exp_manager.process_one_score(score)
             currency_gained_from_score = await currency_manager.process_one_score(score)
             
+            self.write_to_debug_file(debug_file, score, exp_manager, currency_manager)
+            
             # update db
             await self.add_score_to_database(score)
             
             if display_each_score.value:
                 await self.display_one_score(webhook, score, exp_gained_from_score, currency_gained_from_score, exp_manager, currency_manager)    
             
-        file.close()
+        debug_file.close()
         await webhook.send("All done!")
 
     async def display_total_exp_and_currency_change(self, interaction: discord.Interaction, webhook: discord.Webhook, 
@@ -137,7 +138,7 @@ class SubmitCog(commands.Cog):
                 value_info = f"{ANIMATED_CURRENCY_UNIT_EMOJIS[currency_id]}: {currency_amount_before} → {currency_amount_after} (+{currency_amount_after - currency_amount_before})"
                 embed.add_field(name='', value=value_info, inline=False)
                 
-    def write_one_score_to_debug_file(self, file: typing.TextIO, score: Score):
+    def write_to_debug_file(self, file: typing.TextIO, score: Score, exp_manager: ExpManager, currency_manager: CurrencyManager):
         """For debugging purposes."""
         
         file.write(f"OVERALL:\n")
@@ -158,8 +159,16 @@ class SubmitCog(commands.Cog):
         attributes = vars(score.beatmapset)
         for key, value in attributes.items():
             file.write(f"{key}: {value}\n")
+            
+        file.write("\nEXP\n")
+        for item in exp_manager.debug_log:
+            file.write(f"{item}\n")
         
-        file.write("\n\n\n\n\n")
+        file.write("\nCURRENCY\n")
+        for item in currency_manager.debug_log:
+            file.write(f"{item}\n")
+        
+        file.write("\n"*5)
 
     async def score_is_valid(self, webhook: discord.Webhook, score: Score, display_each_score: Choice[int]) -> bool:
         validation_failed_message = f"Ignoring **{score.beatmapset.artist} - {score.beatmapset.title} [{score.beatmap.difficulty_name}]**\n"
