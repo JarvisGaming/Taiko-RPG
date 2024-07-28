@@ -179,9 +179,6 @@ class SubmitCog(commands.Cog):
         
         if await score.is_already_submitted():
             validation_failed_reason = "Score is already submitted"
-            
-        elif score.is_convert:
-            validation_failed_reason = "Score is a convert"
         
         elif score.is_afk():
             validation_failed_reason = "You AFKed while playing"
