@@ -69,7 +69,7 @@ class Score:
         self.is_pass = score_info['passed']
         self.is_convert = score_info['beatmap']['convert']
         
-        self.beatmap = Beatmap(score_info['beatmap'], await self.__get_sr_after_mods(score_info), self)
+        self.beatmap = Beatmap(score_info['beatmap'], await self.__get_beatmap_attributes(score_info), self)
         self.beatmapset = Beatmapset(score_info['beatmapset'])
         
         return self
@@ -98,7 +98,7 @@ class Score:
                 
         return number_of_exp_bar_mods_activated
     
-    async def __get_sr_after_mods(self, score_info: dict[str, Any]) -> float:
+    async def __get_beatmap_attributes(self, score_info: dict[str, Any]) -> dict[str, Any]:
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
@@ -118,7 +118,7 @@ class Score:
         url = f"https://osu.ppy.sh/api/v2/beatmaps/{score_info['beatmap']['id']}/attributes"
         async with http_session.conn.post(url, headers=headers, params=params) as resp:
             parsed_response = await resp.json()
-            return parsed_response['attributes']['star_rating']
+            return parsed_response['attributes']
     
     def is_taiko(self) -> bool:
         return self.beatmap.mode == "taiko"

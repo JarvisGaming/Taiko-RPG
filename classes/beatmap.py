@@ -21,17 +21,17 @@ class Beatmap:
     drain_time: int
     status: str
     
-    def __init__(self, beatmap_info: dict[str, Any], sr_after_mods: float, score: 'Score'):
+    def __init__(self, beatmap_info: dict[str, Any], beatmap_attributes: dict[str, Any], score: 'Score'):
         self.id = beatmap_info['id']
         self.url = beatmap_info['url']
         self.mode = beatmap_info['mode']
         self.checksum = beatmap_info['checksum']
         self.difficulty_name = beatmap_info['version']
-        self.sr = sr_after_mods
+        self.sr = beatmap_attributes['star_rating']
         self.__init_od(beatmap_info, score)
         self.__init_hp(beatmap_info, score)
-        self.num_notes = beatmap_info['count_circles']
-        self.num_sliders = beatmap_info['count_sliders']
+        self.num_notes = beatmap_attributes['max_combo']
+        self.num_sliders = beatmap_info['count_sliders']  # Inaccurate for converts
         self.num_spinners = beatmap_info['count_spinners']
         self.__init_drain_time(beatmap_info, score)
         self.status = beatmap_info['status']
