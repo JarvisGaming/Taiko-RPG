@@ -51,9 +51,10 @@ class Score:
         self.score_id = score_info['id']
         self.score_url = f"https://osu.ppy.sh/scores/{self.score_id}"
         
-        self.num_300s = score_info['statistics'].get('great', 0)  # Field is ommitted when fetching from API if there are no 300s
-        self.num_100s = score_info['statistics'].get('ok', 0)  # Field is ommitted when fetching from API if there are no 100s
-        self.num_misses = score_info['statistics'].get('miss', 0)  # Field is ommitted when fetching from API if there are no misses
+        score_statistics: dict[str, int] = score_info['statistics']
+        self.num_300s = score_statistics.get('great', 0)  # Field is ommitted when fetching from API if there are no 300s
+        self.num_100s = score_statistics.get('ok', 0)  # Field is ommitted when fetching from API if there are no 100s
+        self.num_misses = score_statistics.get('miss', 0)  # Field is ommitted when fetching from API if there are no misses
         self.note_hits = self.num_300s + self.num_100s
         self.accuracy = score_info['accuracy'] * 100  # Convert from 0.99 to 99 for example, since it's more intuitive
         self.rank = score_info['rank']
