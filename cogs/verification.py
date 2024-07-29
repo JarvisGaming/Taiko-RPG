@@ -1,5 +1,6 @@
 import inspect
 import re
+from typing import Optional
 
 import aiosqlite
 import ossapi
@@ -56,7 +57,7 @@ class VerificationCog(commands.Cog):
         
         await interaction.response.send_message("Verification successful! Use the `/help` command to see where to start!")
 
-    def get_osu_id_from_profile_link(self, profile_link: str) -> str | None:
+    def get_osu_id_from_profile_link(self, profile_link: str) -> Optional[str]:
         """
         Returns the user id part of "https://osu.ppy.sh/users/<user id>". Returns None if there is no match.
         https://regex-vis.com/?r=https%3A%2F%2Fosu%5C.ppy%5C.sh%2Fusers%2F%28%5B0-9%5D%2B%29

@@ -1,5 +1,5 @@
 import datetime
-from typing import Any
+from typing import Any, Optional
 
 import aiosqlite
 import dateutil.parser
@@ -32,7 +32,7 @@ class Score:
     
     total_score: int  # Lazer score_info, so stable scores are scored w/ classic mod (vs legacy_total_score)
     max_combo: int  # In the score, not the map
-    pp: float | None
+    pp: Optional[float]
     has_replay: bool
     is_FC: bool
     is_pass: bool

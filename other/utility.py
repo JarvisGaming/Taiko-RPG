@@ -138,7 +138,7 @@ def create_str_of_allowed_mods() -> str:
     
     return new_message.strip()  # Removes trailing space
 
-async def user_is_in_database(osu_id: int | None = None, discord_id: int | None = None, osu_username: str | None = None) -> bool:
+async def user_is_in_database(osu_id: Optional[int] = None, discord_id: Optional[int] = None, osu_username: Optional[str] = None) -> bool:
     """Checks if user is in the database."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
@@ -156,7 +156,7 @@ async def user_is_in_database(osu_id: int | None = None, discord_id: int | None 
         
         return await cursor.fetchone() is not None
 
-async def get_osu_id(discord_id: int | None = None, osu_username: str | None = None) -> int | None:
+async def get_osu_id(discord_id: Optional[int] = None, osu_username: Optional[str] = None) -> Optional[int]:
     """Returns None if not found in database."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
@@ -173,7 +173,7 @@ async def get_osu_id(discord_id: int | None = None, osu_username: str | None = N
             return data[0]
         return None
 
-async def get_discord_id(osu_id: int | None = None, osu_username: str | None = None) -> int | None:
+async def get_discord_id(osu_id: Optional[int] = None, osu_username: Optional[str] = None) -> Optional[int]:
     """Returns None if not found in database."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
@@ -190,7 +190,7 @@ async def get_discord_id(osu_id: int | None = None, osu_username: str | None = N
             return data[0]
         return None
 
-async def get_osu_username(discord_id: int | None = None, osu_id: int | None = None) -> str | None:
+async def get_osu_username(discord_id: Optional[int] = None, osu_id: Optional[int] = None) -> Optional[str]:
     """Returns None if not found in database."""
     
     async with aiosqlite.connect("./data/database.db") as conn:
@@ -207,7 +207,7 @@ async def get_osu_username(discord_id: int | None = None, osu_id: int | None = N
             return data[0]
         return None
  
-async def get_user_exp_bars(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, ExpBar]:
+async def get_user_exp_bars(discord_id: Optional[int] = None, osu_id: Optional[int] = None, osu_username: Optional[str] = None) -> dict[str, ExpBar]:
     
     user_exp_bars = {}
     
@@ -233,7 +233,7 @@ async def get_user_exp_bars(discord_id: int | None = None, osu_id: int | None = 
     
     return user_exp_bars
 
-async def get_user_currency(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, int]:
+async def get_user_currency(discord_id: Optional[int] = None, osu_id: Optional[int] = None, osu_username: Optional[str] = None) -> dict[str, int]:
     
     if discord_id is not None:
         osu_id = await get_osu_id(discord_id=discord_id)
@@ -265,7 +265,7 @@ def prettify_currency_db_name(currency_name: str) -> str:
     }
     return pretty_currency_name[currency_name]
 
-async def get_user_upgrade_levels(discord_id: int | None = None, osu_id: int | None = None, osu_username: str | None = None) -> dict[str, int]:
+async def get_user_upgrade_levels(discord_id: Optional[int] = None, osu_id: Optional[int] = None, osu_username: Optional[str] = None) -> dict[str, int]:
     if discord_id is not None:
         osu_id = await get_osu_id(discord_id=discord_id)
     elif osu_username is not None:

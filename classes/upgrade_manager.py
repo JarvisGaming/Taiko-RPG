@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import aiosqlite
 import discord
@@ -160,11 +160,11 @@ class UpgradeManager:
             effect_impl = tt_gain_multiplier_effect,
         ))
     
-    def get_upgrade(self, upgrade_id: str) -> Upgrade | None:
+    def get_upgrade(self, upgrade_id: str) -> Optional[Upgrade]:
         return self.upgrades.get(upgrade_id, None)
     
-    def apply_upgrade_effect(self, upgrade: Upgrade, upgrade_level: int, score: "Score", user_exp_bars: dict[str, "ExpBar"] | None = None, 
-                             exp_bar_exp_gain: dict[str, int] | None = None, currency_gain: dict[str, int] | None = None):
+    def apply_upgrade_effect(self, upgrade: Upgrade, upgrade_level: int, score: "Score", user_exp_bars: Optional[dict[str, "ExpBar"]] = None, 
+                             exp_bar_exp_gain: Optional[dict[str, int]] = None, currency_gain: Optional[dict[str, int]] = None):
         """Applies an upgrade effect given some upgrade, its level, and the things that it affects."""
         
         # Determine the parameters needed to be passed as a tuple

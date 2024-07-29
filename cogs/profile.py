@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 import other.utility
 from classes.exp_bar import ExpBar
@@ -13,7 +15,7 @@ class ProfileCog(commands.Cog):
     @app_commands.command(name="profile", description="Display all of a user's exp information")
     @app_commands.describe(osu_username="The player that you want to see the profile of (case sensitive). Leave blank to see your own.")
     @other.utility.is_verified()
-    async def profile(self, interaction: discord.Interaction, osu_username: str | None = None):
+    async def profile(self, interaction: discord.Interaction, osu_username: Optional[str] = None):
         
         # osu_username is an optional field
         if osu_username is None:
