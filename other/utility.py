@@ -7,6 +7,8 @@ import dotenv
 from classes.allowed_mods import AllowedMods
 from classes.exp_bar import ExpBar
 from classes.exp_bar_name import ExpBarName
+from classes.http_session import http_session
+from classes.upgrade_manager import upgrade_manager
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
 from discord.ext import tasks

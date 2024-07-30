@@ -2,8 +2,8 @@ import os
 import sys
 
 import other.utility
+from classes.http_session import http_session
 from other.error_handling import *
-from other.global_constants import *
 
 
 @bot.event

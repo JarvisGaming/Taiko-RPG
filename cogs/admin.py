@@ -1,6 +1,7 @@
 import asyncio
 
 import other.utility
+from classes.http_session import http_session
 from discord.ext import commands
 from other.global_constants import *
 

@@ -2,11 +2,10 @@ import copy
 
 import aiosqlite
 from classes.buff_effect import BuffEffect, BuffEffectType
-from classes.currency import Currency, get_all_currencies
 from classes.score import Score
+from classes.upgrade_manager import upgrade_manager
 from other.global_constants import *
 
-NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN: int = 50  # fix later
 
 class CurrencyManager:
     initial_user_currency: dict[str, int]  # Before all score submissions

@@ -8,6 +8,7 @@ import discord
 import other.utility
 from classes.currency_manager import CurrencyManager
 from classes.exp_manager import ExpManager
+from classes.http_session import http_session
 from classes.score import Score
 from discord import app_commands
 from discord.app_commands import Choice
@@ -112,15 +113,15 @@ class SubmitCog(commands.Cog):
         embed = discord.Embed(title=f"{osu_username}'s EXP and currency changes:")
         embed.colour = discord.Color.from_rgb(255,255,255)  # white
         
-        await self.add_total_exp_change_to_embed(embed, exp_manager)
-        await self.add_total_currency_change_to_embed(embed, currency_manager)
+        self.add_total_exp_change_to_embed(embed, exp_manager)
+        self.add_total_currency_change_to_embed(embed, currency_manager)
         
         if len(embed.fields) == 0:
             embed.add_field(name='', value="No change!")
         
         await webhook.send(embed=embed)
 
-    async def add_total_exp_change_to_embed(self, embed: discord.Embed, exp_manager: ExpManager):
+    def add_total_exp_change_to_embed(self, embed: discord.Embed, exp_manager: ExpManager):
 
         for (exp_bar_name, exp_bar_before), exp_bar_after in zip(exp_manager.initial_user_exp_bars.items(), exp_manager.current_user_exp_bars.values()):
             if exp_bar_after.total_exp > exp_bar_before.total_exp:
@@ -132,7 +133,7 @@ class SubmitCog(commands.Cog):
                 
                 embed.add_field(name=name_info, value=value_info, inline=False)
         
-    async def add_total_currency_change_to_embed(self, embed: discord.Embed, currency_manager: CurrencyManager):
+    def add_total_currency_change_to_embed(self, embed: discord.Embed, currency_manager: CurrencyManager):
         for (currency_id, currency_amount_before), currency_amount_after in zip(currency_manager.initial_user_currency.items(), currency_manager.current_user_currency.values()):
             if currency_amount_after > currency_amount_before:
                 value_info = f"{ALL_CURRENCIES[currency_id].animated_discord_emoji}: {currency_amount_before} → {currency_amount_after} (+{currency_amount_after - currency_amount_before})"

@@ -6,6 +6,7 @@ import aiosqlite
 from classes.buff_effect import BuffEffect, BuffEffectType
 from classes.exp_bar_name import ExpBarName
 from classes.score import Score
+from classes.upgrade_manager import upgrade_manager
 from other.global_constants import *
 
 if TYPE_CHECKING:

@@ -12,3 +12,5 @@ class HttpSession:
     async def close_http_session(self):
         if not self.conn.closed:
             await self.conn.close()
+
+http_session = HttpSession()

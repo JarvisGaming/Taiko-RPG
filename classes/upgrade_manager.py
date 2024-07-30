@@ -6,12 +6,11 @@ import discord
 import other.utility
 from classes.buff_effect import BuffEffect, BuffEffectType
 from classes.upgrade import Upgrade
+from other.global_constants import NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN
 
 if TYPE_CHECKING:
     from classes.exp_bar import ExpBar
     from classes.score import Score
-
-NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN: int = 50  # fix later
 
 class UpgradeManager:
 
@@ -246,3 +245,5 @@ class UpgradeManager:
         if upgrade_cost > user_currency[upgrade.cost_currency_unit]:
             return False
         return True
+
+upgrade_manager = UpgradeManager()
