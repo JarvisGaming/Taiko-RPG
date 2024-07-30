@@ -32,7 +32,7 @@ class ShopCog(commands.Cog):
             current_upgrade_level = user_upgrade_levels[upgrade_id]
             max_level = upgrade.max_level
             next_upgrade_level_cost = upgrade.cost(current_upgrade_level+1)
-            currency_emoji = ANIMATED_CURRENCY_UNIT_EMOJIS[upgrade.cost_currency_unit]
+            currency_emoji = ALL_CURRENCIES[upgrade.cost_currency_unit].animated_discord_emoji
             upgrade_description = upgrade.description
             
             if current_upgrade_level >= max_level:

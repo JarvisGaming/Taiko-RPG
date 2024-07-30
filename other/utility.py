@@ -258,7 +258,7 @@ async def get_user_currency(discord_id: Optional[int] = None, osu_id: Optional[i
 def create_str_of_user_currency(user_currency: dict[str, int]) -> str:
     output = ""
     for currency_id, currency_amount in user_currency.items():
-        output += f"{currency_amount} {ANIMATED_CURRENCY_UNIT_EMOJIS[currency_id]}  "
+        output += f"{currency_amount} {ALL_CURRENCIES[currency_id].animated_discord_emoji}  "
     return output
 
 def prettify_currency_db_name(currency_name: str) -> str:

@@ -40,7 +40,7 @@ class ProfileCog(commands.Cog):
 
     def populate_profile_embed(self, user_currency: dict[str, int], user_exp_bars: dict[str, ExpBar], embed: discord.Embed):
         for currency_id, currency_amount in user_currency.items():
-            embed.add_field(name='', value=f"{currency_amount} {ANIMATED_CURRENCY_UNIT_EMOJIS[currency_id]}", inline=False)
+            embed.add_field(name='', value=f"{currency_amount} {ALL_CURRENCIES[currency_id].animated_discord_emoji}", inline=False)
         
         for exp_bar_name, exp_bar in user_exp_bars.items():
             # Add exp information for that mod to the embed

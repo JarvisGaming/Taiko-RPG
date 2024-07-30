@@ -2,6 +2,7 @@ import copy
 
 import aiosqlite
 from classes.buff_effect import BuffEffect, BuffEffectType
+from classes.currency import Currency, get_all_currencies
 from classes.score import Score
 from other.global_constants import *
 
@@ -35,7 +36,7 @@ class CurrencyManager:
         return new_currency_gain
     
     def __calculate_currency_of_score_before_buffs(self, score: Score) -> dict[str, int]:
-        original_currency_gain = {currency_name: 0 for currency_name in CURRENCY_UNITS}
+        original_currency_gain = {currency_name: 0 for currency_name in ALL_CURRENCIES.keys()}
         original_currency_gain['taiko_tokens'] = score.note_hits // NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN
         return original_currency_gain
 
@@ -55,7 +56,7 @@ class CurrencyManager:
                     self.debug_log.append(f"after upgrade applied: {new_currency_gain}")
     
     def __update_user_currency_locally(self, new_currency_gain: dict[str, int]):
-        for currency_name in CURRENCY_UNITS:
+        for currency_name in ALL_CURRENCIES.keys():
             self.current_user_currency[currency_name] += new_currency_gain[currency_name]
     
     async def __update_user_currency_in_database(self, score: Score):
