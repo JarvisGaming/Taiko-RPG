@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import aiosqlite
 from classes.buff_effect import BuffEffect, BuffEffectType
+from classes.exp_bar_name import ExpBarName
 from classes.score import Score
 from other.global_constants import *
 
@@ -50,7 +51,7 @@ class ExpManager:
         return int(original_overall_exp)
     
     def __calculate_exp_bar_exp_of_score_before_buffs(self, score: Score) -> dict[str, int]:
-        original_exp_bar_exp = {exp_bar_name: 0 for exp_bar_name in EXP_BAR_NAMES}
+        original_exp_bar_exp = {exp_bar_name: 0 for exp_bar_name in ExpBarName.list_as_str()}
         original_exp_bar_exp['Overall'] = self.__calculate_overall_exp_of_score_before_buffs(score)
         
         self.split_overall_exp_among_exp_bars(score, original_exp_bar_exp)
@@ -67,7 +68,7 @@ class ExpManager:
         # Split the EXP evenly among activated exp bar mods otherwise
         else:
             for mod in score.mods:
-                if mod.acronym in EXP_BAR_NAMES + ['NC', 'DC']:
+                if mod.acronym in ExpBarName.list_as_str() + ['NC', 'DC']:
                     # NC and DC aren't exp bar names, but belong under DT and HT respectively
                     if mod.acronym == 'NC': mod_name = 'DT'
                     elif mod.acronym == 'DC': mod_name = 'HT'
@@ -82,7 +83,7 @@ class ExpManager:
     def __calculate_exp_bar_exp_of_score_after_buffs(self, score: Score, original_exp_bar_exp_gain: dict[str, int]) -> dict[str, int]:
         
         # Get overall exp after buffs
-        new_exp_bar_exp_gain = {exp_bar_name: 0 for exp_bar_name in EXP_BAR_NAMES}
+        new_exp_bar_exp_gain = {exp_bar_name: 0 for exp_bar_name in ExpBarName.list_as_str()}
         new_exp_bar_exp_gain['Overall'] = copy.deepcopy(original_exp_bar_exp_gain['Overall'])
         
         self.__apply_buff_effects_to_overall_exp(score, new_exp_bar_exp_gain)

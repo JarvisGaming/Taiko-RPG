@@ -4,8 +4,10 @@ from typing import Any, Optional
 import aiosqlite
 import dateutil.parser
 import other.utility
+from classes.allowed_mods import AllowedMods
 from classes.beatmap import Beatmap
 from classes.beatmapset import Beatmapset
+from classes.exp_bar_name import ExpBarName
 from classes.mod import Mod
 from other.global_constants import *
 
@@ -94,7 +96,7 @@ class Score:
         for mod in self.mods:
             
             # There is no mod with the name "Overall" or "NM"
-            if mod.acronym in EXP_BAR_NAMES + ['NC', 'DC']:
+            if mod.acronym in ExpBarName.list_as_str() + ['NC', 'DC']:
                 number_of_exp_bar_mods_activated += 1
                 
         return number_of_exp_bar_mods_activated
@@ -126,7 +128,7 @@ class Score:
     
     def has_illegal_mods(self) -> bool:
         for mod in self.mods:
-            if mod.acronym not in ALLOWED_MODS:
+            if mod.acronym not in AllowedMods.list_as_str():
                 return True
         return False
     

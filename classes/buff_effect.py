@@ -1,16 +1,7 @@
-from enum import Enum, auto
+from enum import auto
 
+from classes.extended_enum import ExtendedEnum
 
-class ExtendedEnum(Enum):
-    @classmethod
-    def list(cls):
-        """Returns a list of all members of the enum as enum values."""
-        return [x for x in cls.__members__.values()]
-    
-    @classmethod
-    def list_as_str(cls):
-        """Returns a list of all members of the enum as strings."""
-        return [x.name for x in cls]
 
 class BuffEffect(ExtendedEnum):
     OVERALL_EXP_GAIN = auto()

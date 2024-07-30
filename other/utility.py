@@ -4,7 +4,9 @@ from typing import Optional
 
 import aiosqlite
 import dotenv
+from classes.allowed_mods import AllowedMods
 from classes.exp_bar import ExpBar
+from classes.exp_bar_name import ExpBarName
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
 from discord.ext import tasks
@@ -133,7 +135,7 @@ def create_str_of_allowed_mods() -> str:
     new_message = ""
     
     # Adds all allowed mods to the message
-    for mod in ALLOWED_MODS:
+    for mod in AllowedMods.list_as_str():
         new_message += f"{mod} "
     
     return new_message.strip()  # Removes trailing space
@@ -214,7 +216,7 @@ async def get_user_exp_bars(discord_id: Optional[int] = None, osu_id: Optional[i
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
         
-        for exp_bar_name in EXP_BAR_NAMES:
+        for exp_bar_name in ExpBarName.list_as_str():
             
             if discord_id is not None:
                 await cursor.execute(f"SELECT {exp_bar_name.lower()}_exp FROM exp_table WHERE discord_id=?", (discord_id,))

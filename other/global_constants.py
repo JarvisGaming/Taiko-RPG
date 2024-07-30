@@ -17,9 +17,6 @@ OSU_CLIENT_SECRET: str = os.environ['OSU_CLIENT_SECRET']
 OSU_CLIENT_ID: int = int(os.environ['OSU_CLIENT_ID'])
 OSU_API_KEY: str = os.environ['OSU_API_KEY']  # Legacy API
 
-ALLOWED_MODS: list[str] = ['NF', 'EZ', 'HD', 'HR', 'FL', 'DT', 'NC', 'HT', 'DC', 'SD', 'PF', 'CL', 'AC', 'SG', 'MU']
-EXP_BAR_NAMES: list[str] = ['Overall', 'NM', 'HD', 'HR', 'DT', 'HT']  # Does not include NC, DC
-
 CURRENCY_UNITS: list[str] = ['taiko_tokens']
 CURRENCY_UNIT_EMOJIS: dict[str, str] = {'taiko_tokens': f"<:taiko_tokens:1259156904349794357>"}  # <emoji_name:emoji_id>
 ANIMATED_CURRENCY_UNIT_EMOJIS: dict[str, str] = {'taiko_tokens': f"<a:taiko_tokens_spinning:1259859321475305504>"}  # <a:emoji_name:emoji_id>
