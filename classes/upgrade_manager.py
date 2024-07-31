@@ -1,16 +1,41 @@
 import inspect
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import aiosqlite
 import discord
 import other.utility
 from classes.buff_effect import BuffEffect, BuffEffectType
-from classes.upgrade import Upgrade
 from other.global_constants import NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN
 
 if TYPE_CHECKING:
-    from classes.exp_bar import ExpBar
+    from classes.buff_effect import BuffEffect, BuffEffectType
+    from classes.exp import ExpBar
     from classes.score import Score
+    
+
+class Upgrade:
+    id: str
+    name: str
+    description: str
+    max_level: int
+    cost_currency_unit: str
+    cost: Callable[[int], int]  # lambda function that takes in a level, and returns the corresponding upgrade cost
+    effect: "BuffEffect"  # What aspect the upgrade affects (eg Overall EXP, Taiko Token gain)
+    effect_type: "BuffEffectType"  # Determines what order the upgrade should be applied in (eg additive -> mulplicative)
+    effect_impl: Callable[..., None]  # Changes rewards according to the upgrade effect and description
+    
+    def __init__(self, id: str, name: str, description: str, max_level: int, cost_currency_unit: str, cost: Callable[[int], int], 
+                 effect: "BuffEffect", effect_type: "BuffEffectType", effect_impl: Callable[..., None]):
+        self.id = id
+        self.name = name
+        self.description = description
+        self.max_level = max_level
+        self.cost_currency_unit = cost_currency_unit
+        self.cost = cost
+        self.effect = effect
+        self.effect_type = effect_type
+        self.effect_impl = effect_impl
+        
 
 class UpgradeManager:
 

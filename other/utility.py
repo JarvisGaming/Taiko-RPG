@@ -4,10 +4,10 @@ from typing import Optional
 
 import aiosqlite
 import dotenv
-from classes.allowed_mods import AllowedMods
-from classes.exp_bar import ExpBar
-from classes.exp_bar_name import ExpBarName
+from classes.currency import Currency, CurrencyID
+from classes.exp import ExpBar, ExpBarName
 from classes.http_session import http_session
+from classes.mod import AllowedMods
 from classes.upgrade_manager import upgrade_manager
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
@@ -260,7 +260,8 @@ async def get_user_currency(discord_id: Optional[int] = None, osu_id: Optional[i
 def create_str_of_user_currency(user_currency: dict[str, int]) -> str:
     output = ""
     for currency_id, currency_amount in user_currency.items():
-        output += f"{currency_amount} {ALL_CURRENCIES[currency_id].animated_discord_emoji}  "
+        all_currencies = get_all_currencies()
+        output += f"{currency_amount} {all_currencies[currency_id].animated_discord_emoji}  "
     return output
 
 def prettify_currency_db_name(currency_name: str) -> str:
@@ -288,3 +289,14 @@ async def get_user_upgrade_levels(discord_id: Optional[int] = None, osu_id: Opti
 
     return user_upgrade_levels
 
+def get_all_currencies() -> dict[str, Currency]:
+    """Returns a dict with the currency id as the key, and its Currency object as the value."""
+    
+    currencies = {}
+    currencies['taiko_tokens'] = Currency(
+        currency_id = CurrencyID.taiko_tokens,
+        discord_emoji = "<:taiko_tokens:1259156904349794357>",
+        animated_discord_emoji = "<a:taiko_tokens_spinning:1259859321475305504>",
+    )
+    
+    return currencies

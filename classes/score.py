@@ -4,12 +4,11 @@ from typing import Any, Optional
 import aiosqlite
 import dateutil.parser
 import other.utility
-from classes.allowed_mods import AllowedMods
 from classes.beatmap import Beatmap
 from classes.beatmapset import Beatmapset
-from classes.exp_bar_name import ExpBarName
+from classes.exp import ExpBarName
 from classes.http_session import http_session
-from classes.mod import Mod
+from classes.mod import AllowedMods, Mod
 from other.global_constants import *
 
 

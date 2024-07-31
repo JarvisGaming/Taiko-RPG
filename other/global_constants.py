@@ -1,12 +1,15 @@
 import os
+from typing import TYPE_CHECKING
 
 import discord
-from classes.currency import Currency, get_all_currencies
 from discord.ext import commands
 from dotenv import load_dotenv
 from ossapi import OssapiAsync
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
+
+if TYPE_CHECKING:
+    from classes.currency import Currency
 
 load_dotenv(dotenv_path="./data/sensitive.env", verbose=True, override=True)  # This line applies to the whole process, not just the current script
 
@@ -17,7 +20,6 @@ OSU_CLIENT_ID: int = int(os.environ['OSU_CLIENT_ID'])
 OSU_API_KEY: str = os.environ['OSU_API_KEY']  # Legacy API
 
 NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN: int = 50
-ALL_CURRENCIES: dict[str, Currency] = get_all_currencies()
 
 osu_api = OssapiAsync(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), activity=discord.CustomActivity(name="🥁 banging your mother 🥁"), help_command=None)
