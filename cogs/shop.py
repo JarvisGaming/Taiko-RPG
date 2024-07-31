@@ -2,7 +2,7 @@ import inspect
 
 import discord
 import other.utility
-from classes.upgrade_manager import upgrade_manager
+from classes.upgrade import upgrade_manager
 from discord import app_commands
 from discord.ext import commands
 from other.global_constants import *

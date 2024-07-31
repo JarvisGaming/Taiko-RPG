@@ -8,7 +8,7 @@ from classes.currency import Currency, CurrencyID
 from classes.exp import ExpBar, ExpBarName
 from classes.http_session import http_session
 from classes.mod import AllowedMods
-from classes.upgrade_manager import upgrade_manager
+from classes.upgrade import upgrade_manager
 from data.channel_list import APPROVED_CHANNEL_ID_LIST
 from discord import app_commands
 from discord.ext import tasks

@@ -1,5 +1,4 @@
 import os
-from typing import TYPE_CHECKING
 
 import discord
 from discord.ext import commands
@@ -7,9 +6,6 @@ from dotenv import load_dotenv
 from ossapi import OssapiAsync
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
-
-if TYPE_CHECKING:
-    from classes.currency import Currency
 
 load_dotenv(dotenv_path="./data/sensitive.env", verbose=True, override=True)  # This line applies to the whole process, not just the current script
 

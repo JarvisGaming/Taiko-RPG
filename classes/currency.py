@@ -6,7 +6,7 @@ import other.utility
 from classes.buff_effect import BuffEffect, BuffEffectType
 from classes.extended_enum import ExtendedEnum
 from classes.score import Score
-from classes.upgrade_manager import upgrade_manager
+from classes.upgrade import upgrade_manager
 from other.global_constants import *
 
 class CurrencyID(ExtendedEnum):

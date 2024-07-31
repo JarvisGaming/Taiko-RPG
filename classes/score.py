@@ -4,8 +4,7 @@ from typing import Any, Optional
 import aiosqlite
 import dateutil.parser
 import other.utility
-from classes.beatmap import Beatmap
-from classes.beatmapset import Beatmapset
+from classes.beatmap import Beatmap, Beatmapset
 from classes.exp import ExpBarName
 from classes.http_session import http_session
 from classes.mod import AllowedMods, Mod
