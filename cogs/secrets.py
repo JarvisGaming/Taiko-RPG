@@ -16,17 +16,17 @@ class SecretsCog(commands.Cog):
     async def wysi(self, message: discord.Message):
         """Sends a message when a new message contains the number 727: https://knowyourmeme.com/memes/727-wysi"""
         
-        message_without_pings = message.content
+        message_after_cleaning = message.content
         
-        # Removes the <@xxx> part(s) in the message, which are pings
-        # https://regex-vis.com/?r=%3C%40%5B0-9%5D%2B%3F%3E
-        message_without_pings = re.sub("<@[0-9]+?>", "", message_without_pings)
+        # Removes the <@xxx> part(s) in the message, which are pings and emotes
+        # https://regex-vis.com/?r=%3C.%2B%3F%3E
+        message_after_cleaning = re.sub(r"<.+?>", "", message_after_cleaning)
         
-        # Removes the :xxx: part(s) in the message, which are emojis
-        # https://regex-vis.com/?r=%3A%5Cw%2B%3F%3A
-        message_without_pings = re.sub(r":\w+?:", "", message_without_pings)
+        # Removes the [...](...) part(s) in the message, which are animated emotes / markdown for images and gifs
+        # https://regex-vis.com/?r=%5C%5B.%2B%3F%5C%5D%5C%28.%2B%3F%5C%29
+        message_after_cleaning = re.sub(r"\[.+?\]\(.+?\)", "", message_after_cleaning)
         
-        if any(word in message_without_pings for word in ["727", "7.27", "72.7", "7/27"]):
+        if any(word in message_after_cleaning for word in ["727", "7.27", "72.7", "7/27"]):
             channel = message.channel
             await channel.send("WHEN YOU SEE IT")
             return
