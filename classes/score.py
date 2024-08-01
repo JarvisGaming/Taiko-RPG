@@ -118,7 +118,7 @@ class Score:
                 params['mods'] = "256"
                 
         url = f"https://osu.ppy.sh/api/v2/beatmaps/{score_info['beatmap']['id']}/attributes"
-        async with http_session.conn.post(url, headers=headers, params=params) as resp:
+        async with http_session.interface.post(url, headers=headers, params=params) as resp:
             parsed_response = await resp.json()
             return parsed_response['attributes']
     

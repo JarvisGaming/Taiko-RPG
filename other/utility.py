@@ -25,7 +25,7 @@ async def regularly_clean_score_database():
         await conn.commit()
 
 @tasks.loop(hours=12)
-async def regularly_refresh_access_token():
+async def regularly_refresh_osu_api_access_token():
     """
     The access token expires every 24 hours.
     https://osu.ppy.sh/docs/index.html#using-the-access-token-to-access-the-api
@@ -42,7 +42,7 @@ async def regularly_refresh_access_token():
         'scope': "public",
     }
     
-    async with http_session.conn.post("https://osu.ppy.sh/oauth/token", headers=headers, data=data) as resp:
+    async with http_session.interface.post("https://osu.ppy.sh/oauth/token", headers=headers, data=data) as resp:
         json_file = await resp.json()
         os.environ["OSU_API_ACCESS_TOKEN"] = json_file['access_token']  # Updates local environment variable
         dotenv.set_key(dotenv_path="./data/sensitive.env", key_to_set="OSU_API_ACCESS_TOKEN", value_to_set=json_file['access_token'])  # Global

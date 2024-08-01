@@ -10,9 +10,9 @@ from other.error_handling import *
 async def setup_hook():
     """This is run once when the bot starts."""
     
+    await http_session.start_http_session()
     await load_all_cogs()
     await bot.tree.sync()  # Syncs slash commands
-    await http_session.start_http_session()
     
     if not await other.utility.buffs_are_synced_with_database():
         sys.exit(-1)
@@ -22,7 +22,7 @@ async def setup_hook():
         other.utility.regularly_backup_database.start()
     
     other.utility.regularly_clean_score_database.start()
-    other.utility.regularly_refresh_access_token.start()
+    other.utility.regularly_refresh_osu_api_access_token.start()
     
 async def load_all_cogs():
     """Load bot commands stored in the cogs folder."""

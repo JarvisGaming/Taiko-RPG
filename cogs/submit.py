@@ -69,7 +69,7 @@ class SubmitCog(commands.Cog):
         user_osu_id = await other.utility.get_osu_id(discord_id=interaction.user.id)
         url = f"https://osu.ppy.sh/api/v2/users/{user_osu_id}/scores/recent?include_fails=1&mode=taiko&limit={number_of_scores_to_submit}"
         
-        async with http_session.conn.get(url, headers=headers) as resp:
+        async with http_session.interface.get(url, headers=headers) as resp:
             parsed_response = await resp.json()
             return parsed_response
 
