@@ -95,6 +95,8 @@ class Score:
         return number_of_exp_bar_mods_activated
     
     async def __get_beatmap_attributes(self, score_info: dict[str, Any]) -> dict[str, Any]:
+        """Ossapi can't be used here, since it's oudated and doesn't recognize the CL mod."""
+        
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",

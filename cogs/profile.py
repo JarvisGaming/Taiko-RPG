@@ -5,6 +5,7 @@ import other.utility
 from classes.exp import ExpBar
 from discord import app_commands
 from discord.ext import commands
+from init.currency_init import init_currency
 from other.global_constants import *
 
 
@@ -40,7 +41,7 @@ class ProfileCog(commands.Cog):
 
     def populate_profile_embed(self, user_currency: dict[str, int], user_exp_bars: dict[str, ExpBar], embed: discord.Embed):
         for currency_id, currency_amount in user_currency.items():
-            all_currencies = other.utility.get_all_currencies()
+            all_currencies = init_currency()
             embed.add_field(name='', value=f"{currency_amount} {all_currencies[currency_id].animated_discord_emoji}", inline=False)
         
         for exp_bar_name, exp_bar in user_exp_bars.items():

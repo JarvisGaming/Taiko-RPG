@@ -41,7 +41,7 @@ class UpgradeManager:
     # and then in the future we can have other buff related stuff here
 
     def __init__(self):
-        from buff_info.upgrade_init import init_upgrades
+        from init.upgrade_init import init_upgrades
         self.upgrades = init_upgrades()
     
     def get_upgrade(self, upgrade_id: str) -> Optional[Upgrade]:
@@ -125,7 +125,6 @@ class UpgradeManager:
                 
             await conn.commit()
         
-
     async def __user_has_enough_currency(self, upgrade: Upgrade, user_currency: dict[str, int], upgrade_cost: int):
         if upgrade_cost > user_currency[upgrade.cost_currency_unit]:
             return False

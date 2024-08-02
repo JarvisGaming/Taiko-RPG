@@ -5,6 +5,7 @@ import other.utility
 from classes.upgrade import upgrade_manager
 from discord import app_commands
 from discord.ext import commands
+from init.currency_init import init_currency
 from other.global_constants import *
 
 
@@ -33,7 +34,7 @@ class ShopCog(commands.Cog):
             current_upgrade_level = user_upgrade_levels[upgrade_id]
             max_level = upgrade.max_level
             next_upgrade_level_cost = upgrade.cost(current_upgrade_level+1)
-            all_currencies = other.utility.get_all_currencies()
+            all_currencies = init_currency()
             currency_emoji = all_currencies[upgrade.cost_currency_unit].animated_discord_emoji
             upgrade_description = upgrade.description
             

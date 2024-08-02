@@ -19,7 +19,7 @@ if not os.getcwd().endswith("test"):
             await ctx.send("You can't run admin commands!")
             return
         
-        # Checks like is_verified are already handled
+        # Command checks like is_verified and cooldowns are already handled
         elif isinstance(error, commands.CheckFailure):
             return
         

@@ -2,7 +2,6 @@ import copy
 from enum import auto
 
 import aiosqlite
-import other.utility
 from classes.buff_effect import BuffEffect, BuffEffectType
 from classes.extended_enum import ExtendedEnum
 from classes.score import Score
@@ -26,12 +25,15 @@ class Currency:
 
 
 class CurrencyManager:
+    all_currencies: dict[str, Currency]
     initial_user_currency: dict[str, int]  # Before all score submissions
     current_user_currency: dict[str, int]  # Updated after each score submission
     user_upgrade_levels: dict[str, int]
     debug_log: list[str]
     
     def __init__(self, initial_user_currency: dict[str, int], user_upgrade_levels: dict[str, int]):
+        from init.currency_init import init_currency
+        self.all_currencies = init_currency()
         self.initial_user_currency = initial_user_currency
         self.current_user_currency = copy.deepcopy(self.initial_user_currency)  # Deep copy to prevent the two from pointing to the same dict
         self.user_upgrade_levels = user_upgrade_levels
@@ -53,8 +55,7 @@ class CurrencyManager:
         return new_currency_gain
     
     def __calculate_currency_of_score_before_buffs(self, score: Score) -> dict[str, int]:
-        all_currencies = other.utility.get_all_currencies()
-        original_currency_gain = {currency_name: 0 for currency_name in all_currencies.keys()}
+        original_currency_gain = {currency_name: 0 for currency_name in self.all_currencies.keys()}
         original_currency_gain['taiko_tokens'] = score.note_hits // NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN
         return original_currency_gain
 
@@ -74,8 +75,7 @@ class CurrencyManager:
                     self.debug_log.append(f"after upgrade applied: {new_currency_gain}")
     
     def __update_user_currency_locally(self, new_currency_gain: dict[str, int]):
-        all_currencies = other.utility.get_all_currencies()
-        for currency_name in all_currencies.keys():
+        for currency_name in self.all_currencies.keys():
             self.current_user_currency[currency_name] += new_currency_gain[currency_name]
     
     async def __update_user_currency_in_database(self, score: Score):

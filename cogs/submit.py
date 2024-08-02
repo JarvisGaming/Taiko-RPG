@@ -136,8 +136,7 @@ class SubmitCog(commands.Cog):
     def add_total_currency_change_to_embed(self, embed: discord.Embed, currency_manager: CurrencyManager):
         for (currency_id, currency_amount_before), currency_amount_after in zip(currency_manager.initial_user_currency.items(), currency_manager.current_user_currency.values()):
             if currency_amount_after > currency_amount_before:
-                all_currencies = other.utility.get_all_currencies()
-                value_info = f"{all_currencies[currency_id].animated_discord_emoji}: {currency_amount_before} → {currency_amount_after} (+{currency_amount_after - currency_amount_before})"
+                value_info = f"{currency_manager.all_currencies[currency_id].animated_discord_emoji}: {currency_amount_before} → {currency_amount_after} (+{currency_amount_after - currency_amount_before})"
                 embed.add_field(name='', value=value_info, inline=False)
                 
     def write_to_debug_file(self, file: typing.TextIO, score: Score, exp_manager: ExpManager, currency_manager: CurrencyManager):
