@@ -9,6 +9,7 @@ from classes.score import Score
 from classes.upgrade import upgrade_manager
 from other.global_constants import *
 
+
 class CurrencyID(ExtendedEnum):
     taiko_tokens = auto()
 
@@ -22,7 +23,6 @@ class Currency:
         self.currency_id = currency_id
         self.discord_emoji = discord_emoji
         self.animated_discord_emoji = animated_discord_emoji
-
 
 
 class CurrencyManager:
