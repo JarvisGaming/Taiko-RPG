@@ -10,7 +10,6 @@ class Beatmap:
     id: int
     url: str
     mode: str
-    checksum: str
     difficulty_name: str
     sr: float
     od: float
@@ -22,12 +21,10 @@ class Beatmap:
     status: str
     
     def __init__(self, beatmap_info: dict[str, Any], beatmap_attributes: dict[str, Any], score: 'Score'):
-        # Warning: Beatmap attributes only contain 'star_rating' for maps that aren't ranked or loved
         
         self.id = beatmap_info['id']
         self.url = beatmap_info['url']
         self.mode = beatmap_info['mode']
-        self.checksum = beatmap_info['checksum']
         self.difficulty_name = beatmap_info['version']
         self.sr = beatmap_attributes['star_rating']
         self.__init_od(beatmap_info, score)

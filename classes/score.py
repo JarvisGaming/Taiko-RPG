@@ -25,16 +25,13 @@ class Score:
     num_100s: int
     num_misses: int
     note_hits: int
+    max_combo: int  # In the score, not the map
     accuracy: float
     rank: str
     mods: list[Mod]
     mods_human_readable: str
     timestamp: datetime.datetime
     
-    total_score: int  # Lazer score_info, so stable scores are scored w/ classic mod (vs legacy_total_score)
-    max_combo: int  # In the score, not the map
-    pp: Optional[float]
-    has_replay: bool
     is_FC: bool
     is_pass: bool
     is_convert: bool
@@ -57,16 +54,13 @@ class Score:
         self.num_100s = score_statistics.get('ok', 0)  # Field is ommitted when fetching from API if there are no 100s
         self.num_misses = score_statistics.get('miss', 0)  # Field is ommitted when fetching from API if there are no misses
         self.note_hits = self.num_300s + self.num_100s
+        self.max_combo = score_info['max_combo']
         self.accuracy = score_info['accuracy'] * 100  # Convert from 0.99 to 99 for example, since it's more intuitive
         self.rank = score_info['rank']
         self.mods = [Mod(mod_info) for mod_info in score_info['mods']]
         self.__init_human_readable_mod_listing()
         self.timestamp = dateutil.parser.parse(score_info['ended_at'])  # Converts ISO 8601 format timestamp to datetime object
         
-        self.total_score = score_info['total_score']
-        self.max_combo = score_info['max_combo']
-        self.pp = score_info['pp']
-        self.has_replay = score_info['has_replay']
         self.is_FC = score_info['is_perfect_combo']
         self.is_pass = score_info['passed']
         self.is_convert = score_info['beatmap']['convert']
