@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Optional
+from typing import Any
 
 import aiosqlite
 import dateutil.parser
@@ -7,7 +7,7 @@ import other.utility
 from classes.beatmap import Beatmap, Beatmapset
 from classes.exp import ExpBarName
 from classes.http_session import http_session
-from classes.mod import AllowedMods, Mod
+from classes.mod import AllowedMods, Mod, mod_to_int
 from other.global_constants import *
 
 
@@ -100,18 +100,19 @@ class Score:
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
-            'Authorization': f"Bearer {os.getenv('OSU_API_ACCESS_TOKEN')}"
+            'Authorization': f"Bearer {os.getenv('OSU_API_ACCESS_TOKEN')}",
         }
         
         params = {
-            'ruleset': "taiko"
+            'ruleset': "taiko",
+            'mods': 0
         }
         
+        # List of mod acronyms do not work for the 'mods' parameter, for some reason, so we manually calculate the mod combination int
         for mod in self.mods:
-            if mod.acronym in ['DT', 'NC']:
-                params['mods'] = "64"  # Why do mod acronyms not work here.
-            if mod.acronym in ['HT', 'DC']:
-                params['mods'] = "256"
+            mod_bitwise_enum = mod_to_int(mod.acronym)
+            if mod_bitwise_enum is not None:
+                params['mods'] += mod_bitwise_enum
                 
         url = f"https://osu.ppy.sh/api/v2/beatmaps/{score_info['beatmap']['id']}/attributes"
         async with http_session.interface.post(url, headers=headers, params=params) as resp:
