@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 from typing import Optional
 
 import aiosqlite
@@ -65,13 +66,13 @@ async def regularly_backup_database():
     file.SetContentFile("./data/database.db")
     file.Upload()
 
-async def buffs_are_synced_with_database() -> bool:
+async def database_sanity_check():
     """
-    Checks if all the buffs in the managers are present in the database. 
-    Warns user if the buffs in the code and database don't match.
+    Checks if all the buffs and currencies are present in the database.
+    Force exits program if there are things missing in the database, or if there are excess items in the database.
     """
     
-    upgrades_are_synced: bool = True
+    error_message: str = ""
     
     async with aiosqlite.connect("./data/database.db") as conn:
         cursor = await conn.cursor()
@@ -84,14 +85,25 @@ async def buffs_are_synced_with_database() -> bool:
         upgrades_in_database = [row[0] for row in data]
             
         if sorted(upgrades_in_code) != sorted(upgrades_in_database):
-            upgrades_are_synced = False
-    
-    if not upgrades_are_synced:
-        print("WARNING: Upgrades aren't synced in database!")
-        print(f"Outlier in code: {set(upgrades_in_code) - set(upgrades_in_database)}")
-        print(f"Outlier in database: {set(upgrades_in_database) - set(upgrades_in_code)}")
-    
-    return upgrades_are_synced
+            error_message += "WARNING: Upgrades aren't synced in database!\n"
+            error_message += f"Outlier in code: {set(upgrades_in_code) - set(upgrades_in_database)}\n"
+            error_message += f"Outlier in database: {set(upgrades_in_database) - set(upgrades_in_code)}\n"
+        
+        # Checking currency
+        currency_in_code = init_currency().keys()
+        
+        await cursor.execute("SELECT name FROM pragma_table_info('currency') WHERE name != 'osu_id'")
+        data = await cursor.fetchall()
+        currency_in_database = [row[0] for row in data]
+
+        if sorted(currency_in_code) != sorted(currency_in_database):
+            error_message += "WARNING: Currency isn't synced in database!\n"
+            error_message += f"Outlier in code: {set(currency_in_code) - set(currency_in_database)}\n"
+            error_message += f"Outlier in database: {set(currency_in_database) - set(currency_in_code)}\n"
+        
+    if error_message:
+        print(error_message)
+        sys.exit(-1)
         
 def is_verified():
     """

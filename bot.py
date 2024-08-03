@@ -14,8 +14,7 @@ async def setup_hook():
     await load_all_cogs()
     await bot.tree.sync()  # Syncs slash commands
     
-    if not await other.utility.buffs_are_synced_with_database():
-        sys.exit(-1)
+    await other.utility.database_sanity_check()
     
     # Backup only the live database
     if not os.getcwd().endswith("test"):
