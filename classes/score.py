@@ -95,8 +95,6 @@ class Score:
         return number_of_exp_bar_mods_activated
     
     async def __get_beatmap_attributes(self, score_info: dict[str, Any]) -> dict[str, Any]:
-        """Ossapi can't be used here, since it's oudated and doesn't recognize the CL mod."""
-        
         headers = {
             'Accept': "application/json",
             'Content-Type': "application/json",
@@ -154,8 +152,8 @@ class Score:
     
     def map_completion_progress(self) -> float:
         """
-        Returns a value between 0 and 1 representing the percentage of the map that has been completed before quitting out.
-        1 means that the score is a complete runthrough of the map.
+        Returns a value between 0 and 1 representing the percentage of the map that has been completed.
+        1 means that the map was fully played without quitting out or restarting.
         """
         
         return (self.num_300s + self.num_100s + self.num_misses) / self.beatmap.num_notes

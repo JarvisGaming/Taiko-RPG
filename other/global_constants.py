@@ -20,6 +20,7 @@ NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN: int = 50
 osu_api = OssapiAsync(OSU_CLIENT_ID, OSU_CLIENT_SECRET)
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), activity=discord.CustomActivity(name="🥁 banging your mother 🥁"), help_command=None)
 
+# Google Cloud (Google Drive)
 google_auth = GoogleAuth(settings_file="data/google_cloud_settings.yaml")
 google_auth.LocalWebserverAuth(launch_browser=False)  # Creates local webserver and auto handles authentication
 google_drive = GoogleDrive(google_auth)
