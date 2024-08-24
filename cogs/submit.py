@@ -252,7 +252,9 @@ class SubmitCog(commands.Cog):
     async def add_updated_currency_to_embed(self, embed: discord.Embed, currency_gained_from_score: dict[str, int], currency_manager: CurrencyManager):
         for currency_name, currency_gain in currency_gained_from_score.items():
             if currency_gain > 0:
-                embed.add_field(name=f"{other.utility.prettify_currency_db_name(currency_name)}: {currency_manager.current_user_currency[currency_name]} (+{currency_gain})", value='', inline=False)
+                currency_emoji = currency_manager.all_currencies[currency_name].animated_discord_emoji
+                currency_amount = currency_manager.current_user_currency[currency_name]
+                embed.add_field(name='', value=f"{currency_emoji}: {currency_amount} (+{currency_gain})", inline=False)
     
 async def setup(bot: commands.Bot):
     await bot.add_cog(SubmitCog(bot))
