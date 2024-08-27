@@ -45,9 +45,12 @@ class SubmitCog(commands.Cog):
         # Slash commands time out after 3 seconds, so we send a response first in case the command takes too long to execute
         await interaction.response.send_message("Finding scores...")
         
-        user_exp_bars_before_submission = await other.utility.get_user_exp_bars(discord_id=interaction.user.id)
-        user_currency_before_submission = await other.utility.get_user_currency(discord_id=interaction.user.id)
-        user_upgrade_levels = await other.utility.get_user_upgrade_levels(discord_id=interaction.user.id)
+        osu_id = await other.utility.get_osu_id(discord_id=interaction.user.id)
+        assert osu_id is not None
+        
+        user_exp_bars_before_submission = await other.utility.get_user_exp_bars(osu_id=osu_id)
+        user_currency_before_submission = await other.utility.get_user_currency(osu_id=osu_id)
+        user_upgrade_levels = await other.utility.get_user_upgrade_levels(osu_id=osu_id)
         
         exp_manager = ExpManager(user_exp_bars_before_submission, user_upgrade_levels)
         currency_manager = CurrencyManager(user_currency_before_submission, user_upgrade_levels)
@@ -57,6 +60,8 @@ class SubmitCog(commands.Cog):
         await self.display_num_scores_fetched(interaction, display_each_score, all_scores)
         await self.process_and_display_score_impl(webhook, display_each_score, all_scores, exp_manager, currency_manager)
         await self.display_total_exp_and_currency_change(interaction, webhook, exp_manager, currency_manager)
+        
+        await self.process_and_display_levelup_bonus(webhook, exp_manager, currency_manager, osu_id)
 
     async def fetch_user_scores(self, interaction: discord.Interaction, number_of_scores_to_submit: int):
         headers = {
@@ -255,6 +260,29 @@ class SubmitCog(commands.Cog):
                 currency_emoji = currency_manager.all_currencies[currency_name].animated_discord_emoji
                 currency_amount = currency_manager.current_user_currency[currency_name]
                 embed.add_field(name='', value=f"{currency_emoji}: {currency_amount} (+{currency_gain})", inline=False)
+    
+    async def process_and_display_levelup_bonus(self, webhook: discord.Webhook, exp_manager: ExpManager, currency_manager: CurrencyManager, osu_id: int):
+        currency_gain = await currency_manager.process_levelup_bonus(exp_manager, osu_id)
+        
+        if currency_gain is not None:
+            embed = discord.Embed(title="Level Up Reward", color=discord.Color.from_rgb(255, 255, 255))  # white
+            
+            level_before = exp_manager.initial_user_exp_bars['Overall'].level
+            level_after = exp_manager.current_user_exp_bars['Overall'].level
+            level_change = level_after - level_before
+            name = f"Overall Level {level_before} → {level_after} (+{level_change})"
+            
+            currency_emoji = currency_manager.all_currencies['taiko_tokens'].animated_discord_emoji
+            currency_change = currency_gain['taiko_tokens']
+            
+            # We can't just use the value from currency manager, since it's the currency before the entire submission
+            currency_before = currency_manager.current_user_currency['taiko_tokens'] - currency_change
+            currency_after = currency_manager.current_user_currency['taiko_tokens']
+            value = f"{currency_emoji}: {currency_before} → {currency_after} (+{currency_change})"
+            
+            embed.add_field(name=name, value=value)
+            
+            await webhook.send(embed=embed)
     
 async def setup(bot: commands.Bot):
     await bot.add_cog(SubmitCog(bot))

@@ -1,5 +1,6 @@
 import copy
 from enum import auto
+from typing import TYPE_CHECKING, Optional
 
 import aiosqlite
 from classes.buff_effect import BuffEffect, BuffEffectType
@@ -8,6 +9,9 @@ from classes.score import Score
 from classes.upgrade import upgrade_manager
 from other.global_constants import *
 
+if TYPE_CHECKING:
+    from classes.exp import ExpManager
+    
 
 class CurrencyID(ExtendedEnum):
     taiko_tokens = auto()
@@ -50,9 +54,30 @@ class CurrencyManager:
         
         # Update database based on currency manager attributes
         self.__update_user_currency_locally(new_currency_gain)
-        await self.__update_user_currency_in_database(score)
+        await self.__update_user_currency_in_database(score.user_osu_id)
         
         return new_currency_gain
+    
+    async def process_levelup_bonus(self, exp_manager: 'ExpManager', osu_id: int) -> Optional[dict[str, int]]:
+        """Gives additional currency based on how many overall levels you gain."""
+        
+        currency_gain = {}
+        
+        if exp_manager.current_user_exp_bars["Overall"].level > exp_manager.initial_user_exp_bars["Overall"].level:
+            currency_gain["taiko_tokens"] = 0
+            
+            # If you level up from 2 -> 4, then the bonus for level 3 and level 4 will be added
+            for level in range(exp_manager.initial_user_exp_bars["Overall"].level + 1, exp_manager.current_user_exp_bars["Overall"].level + 1):
+                
+                # Currency gain is set at 10% of exp required to reach that level
+                currency_gain["taiko_tokens"] += (level - 1) * 50 // 5
+            
+            self.__update_user_currency_locally(currency_gain)
+            await self.__update_user_currency_in_database(osu_id)
+            
+        if currency_gain:
+            return currency_gain
+        return None
     
     def __calculate_currency_of_score_before_buffs(self, score: Score) -> dict[str, int]:
         original_currency_gain = {currency_name: 0 for currency_name in self.all_currencies.keys()}
@@ -78,9 +103,9 @@ class CurrencyManager:
         for currency_name in self.all_currencies.keys():
             self.current_user_currency[currency_name] += new_currency_gain[currency_name]
     
-    async def __update_user_currency_in_database(self, score: Score):
+    async def __update_user_currency_in_database(self, osu_id: int):
         async with aiosqlite.connect("./data/database.db") as conn:
             for currency_name, amount_of_currency in self.current_user_currency.items():
                 query = f"UPDATE currency SET {currency_name}=? WHERE osu_id=?"
-                await conn.execute(query, (amount_of_currency, score.user_osu_id))
+                await conn.execute(query, (amount_of_currency, osu_id))
             await conn.commit()
