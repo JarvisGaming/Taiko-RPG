@@ -119,6 +119,21 @@ def init_upgrades() -> dict[str, Upgrade]:
         effect_type = BuffEffectType.MULTIPLICATIVE,
         effect_impl = ht_exp_gain_multiplier_effect,
     ))
+    
+    def infinite_overall_exp_gain_multiplier_effect(upgrade_level: int, exp_bar_exp_gain: dict[str, int], user_exp_bars: dict[str, "ExpBar"]):
+        exp_bar_exp_gain['Overall'] = int(exp_bar_exp_gain['Overall'] * (1 + 0.0002 * upgrade_level * user_exp_bars['Overall'].level))
+    
+    all_upgrades['infinite_overall_exp_gain_multiplier'] = (Upgrade(
+        id = "infinite_overall_exp_gain_multiplier",
+        name = "Infinite Overall EXP Gain Multiplier",
+        description = f"+0.02% Overall EXP gain / Overall level, per upgrade level (additive)",
+        max_level = 10000,
+        cost_currency_unit = "taiko_tokens",
+        cost = lambda level: int(300 * level ** 1.1),
+        effect = BuffEffect.OVERALL_EXP_GAIN,
+        effect_type = BuffEffectType.MULTIPLICATIVE,
+        effect_impl = infinite_overall_exp_gain_multiplier_effect,
+    ))
 
     def tt_gain_efficiency_effect(upgrade_level: int, score: "Score", currency_gain: dict[str, int]):
         currency_gain['taiko_tokens'] = score.note_hits // (NOTE_HITS_REQUIRED_PER_TAIKO_TOKEN - upgrade_level)
