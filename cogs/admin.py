@@ -2,6 +2,7 @@ import asyncio
 
 import other.utility
 from classes.http_session import http_session
+from classes.pagination import PaginationView
 from discord.ext import commands
 from other.global_constants import *
 
@@ -9,6 +10,13 @@ from other.global_constants import *
 class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+    
+    @commands.command()
+    @commands.is_owner()
+    async def pagination(self, ctx: commands.Context):
+        data = list(range(1, 25))
+        pagination = PaginationView(data=data)
+        await pagination.send(ctx)
     
     @commands.command()
     @commands.is_owner()
