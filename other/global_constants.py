@@ -24,3 +24,6 @@ bot = commands.Bot(command_prefix="rpg!", intents=discord.Intents.all(), activit
 google_auth = GoogleAuth(settings_file="data/google_cloud_settings.yaml")
 google_auth.LocalWebserverAuth(launch_browser=False)  # Creates local webserver and auto handles authentication
 google_drive = GoogleDrive(google_auth)
+
+# Command concurrency check, stores Discord IDs
+users_currently_running_submit_command: list[int] = []

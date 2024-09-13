@@ -130,6 +130,18 @@ def is_verified():
     # Adds the check
     return app_commands.check(predicate)
 
+def is_not_running_submit_command():
+    """Patches bug where if you buy stuff from /shop while running /submit, the currency doesn't get deducted."""
+    
+    async def predicate(interaction: discord.Interaction):
+        if interaction.user.id in users_currently_running_submit_command:
+            await interaction.response.send_message("Please wait for /submit to finish first!")
+            return False
+        return True
+    
+    # Adds the check
+    return app_commands.check(predicate)
+
 async def send_in_all_channels(message: str):
     """Sends <message> in all approved channels."""
     

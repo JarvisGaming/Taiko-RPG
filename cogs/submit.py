@@ -41,6 +41,8 @@ class SubmitCog(commands.Cog):
     @app_commands.checks.dynamic_cooldown(other.utility.command_cooldown_for_live_bot)
     @other.utility.is_verified()
     async def submit(self, interaction: discord.Interaction, display_each_score: Choice[int], number_of_scores_to_submit: int = 100):
+        # Prevent user from running /submit and /shop or /buy simultaneously
+        users_currently_running_submit_command.append(interaction.user.id)
         
         # Slash commands time out after 3 seconds, so we send a response first in case the command takes too long to execute
         await interaction.response.send_message("Finding scores...")
@@ -62,6 +64,9 @@ class SubmitCog(commands.Cog):
         await self.display_total_exp_and_currency_change(interaction, webhook, exp_manager, currency_manager)
         
         await self.process_and_display_levelup_bonus(webhook, exp_manager, currency_manager, osu_id)
+        
+        # Prevent user from running /submit and /shop or /buy simultaneously
+        users_currently_running_submit_command.remove(interaction.user.id)
 
     async def fetch_user_scores(self, interaction: discord.Interaction, number_of_scores_to_submit: int):
         headers = {

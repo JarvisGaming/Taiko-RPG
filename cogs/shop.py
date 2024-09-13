@@ -15,6 +15,7 @@ class ShopCog(commands.Cog):
     
     @app_commands.command(name="shop", description="Buy upgrades here!")
     @other.utility.is_verified()
+    @other.utility.is_not_running_submit_command()
     async def shop(self, interaction: discord.Interaction):
         embed = await self.create_shop_embed(interaction)
         await interaction.response.send_message(embed=embed)
@@ -57,6 +58,7 @@ class ShopCog(commands.Cog):
     @app_commands.command(name="buy", description="Use this to buy upgrades and items!")
     @app_commands.describe(times_to_purchase="How many times you want to buy it. Enter a high number to buy max.")
     @other.utility.is_verified()
+    @other.utility.is_not_running_submit_command()
     async def buy(self, interaction: discord.Interaction, thing_to_purchase_id: str, times_to_purchase: int):
         if upgrade_manager.get_upgrade(thing_to_purchase_id) is None:
             await interaction.response.send_message("The thing you're trying to buy can't be found!")
