@@ -54,7 +54,7 @@ if not os.getcwd().endswith("test"):
 def write_error_to_log(error: commands.errors.CommandInvokeError | app_commands.AppCommandError):
     """Errors caught by on_command_error and on_app_command_error are not written to logs, so it has to be done manually."""
     
-    with open("./logs.log", "a") as file:
+    with open("./logs.log", "a", encoding="utf-8") as file:
         time = datetime.datetime.now()
         formatted_time = time.strftime('%Y-%m-%d %H:%M:%S')
         file.write(f"[{formatted_time}] [ERROR]\n")

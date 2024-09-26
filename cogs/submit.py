@@ -94,7 +94,7 @@ class SubmitCog(commands.Cog):
 
     async def process_and_display_score_impl(self, webhook: discord.Webhook, display_each_score: Choice[int], all_scores: list[dict[str, Any]], 
                                              exp_manager: ExpManager, currency_manager: CurrencyManager):
-        debug_file = open("./data/scores.txt", "w")
+        debug_file = open("./data/scores.txt", "w", encoding="utf-8")
         
         for score_info in all_scores:
                 
