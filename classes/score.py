@@ -3,6 +3,7 @@ from typing import Any
 
 import aiosqlite
 import dateutil.parser
+
 import other.utility
 from classes.beatmap import Beatmap, Beatmapset
 from classes.exp import ExpBarName
@@ -148,7 +149,7 @@ class Score:
             return False
     
     def is_complete_runthrough_of_map(self) -> bool:
-        return self.map_completion_progress() == 1.0
+        return self.map_completion_progress() >= 1.0
     
     def map_completion_progress(self) -> float:
         """
