@@ -41,9 +41,6 @@ class SubmitCog(commands.Cog):
     @app_commands.checks.dynamic_cooldown(other.utility.command_cooldown_for_live_bot)
     @other.utility.is_verified()
     async def submit(self, interaction: discord.Interaction, display_each_score: Choice[int], number_of_scores_to_submit: int = 100):
-        # Prevent user from running /submit and /shop or /buy simultaneously
-        users_currently_running_submit_command.append(interaction.user.id)
-        
         # Slash commands time out after 3 seconds, so we send a response first in case the command takes too long to execute
         await interaction.response.send_message("Finding scores...")
         

@@ -6,6 +6,20 @@ from discord import app_commands
 from discord.ext import commands
 from other.global_constants import *
 
+
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    """If user is running /submit, add the user in users_currently_running_submit_command."""
+    assert interaction.command is not None
+    if interaction.command.name == "submit":
+        users_currently_running_submit_command.add(interaction.user.id)
+
+@bot.event
+async def on_app_command_completion(interaction: discord.Interaction, command: app_commands.Command):
+    """When /submit finishes, remove the user from users_currently_running_submit_command."""
+    if command.name == "submit":
+        users_currently_running_submit_command.discard(interaction.user.id)
+
 # Activate error handling only for live version
 if not os.getcwd().endswith("test"):
     @bot.event
@@ -39,10 +53,16 @@ if not os.getcwd().endswith("test"):
             return
         
         # Checks like is_verified are already handled
-        elif isinstance(error, app_commands.CheckFailure):
+        if isinstance(error, app_commands.CheckFailure):
             return
-            
-        elif interaction.response.is_done():
+        
+        # fihnasdoiuvbasdiubqawdiuyb
+        assert interaction.command is not None
+        if interaction.command.name == "submit":
+            users_currently_running_submit_command.remove(interaction.user.id)
+        
+        # Send error message
+        if interaction.response.is_done():
             original_response = await interaction.original_response()
             await original_response.edit(content=f"An exception occurred: {error}")
             

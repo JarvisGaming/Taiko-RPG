@@ -111,9 +111,7 @@ def is_verified():
     If user isn't an admin, sends a message and returns False. Returns True otherwise.
     """
 
-    async def predicate(interaction: discord.Interaction):
-        """The check in question."""
-
+    async def predicate(interaction: discord.Interaction) -> bool:
         async with aiosqlite.connect("./data/database.db") as conn:
             cursor = await conn.cursor()
             
@@ -130,12 +128,15 @@ def is_verified():
     # Adds the check
     return app_commands.check(predicate)
 
-def is_not_running_submit_command():
-    """Patches bug where if you buy stuff from /shop while running /submit, the currency doesn't get deducted."""
+def prevent_command_from_running_when_submitting():
+    """
+    Decorator. Prevents the user from running a command with this decorator if /submit is still being run.
+    This is important for commands that depend on perfectly up-to-date currency / exp.
+    """
     
-    async def predicate(interaction: discord.Interaction):
+    async def predicate(interaction: discord.Interaction) -> bool:
         if interaction.user.id in users_currently_running_submit_command:
-            await interaction.response.send_message("Please wait for /submit to finish first!")
+            await interaction.response.send_message("Wait for /submit to finish running!")
             return False
         return True
     
@@ -148,7 +149,7 @@ async def send_in_all_channels(message: str):
     for channel_id in APPROVED_CHANNEL_ID_LIST:
         channel = bot.get_channel(channel_id)
         await channel.send(message)  # type: ignore
-        
+
 def command_cooldown_for_live_bot(interaction: discord.Interaction) -> Optional[app_commands.Cooldown]:
     """Makes certain commands (eg submit) have a cooldown on the live version of the bot, while disabling it for the test version."""
     if os.getcwd().endswith("test"):

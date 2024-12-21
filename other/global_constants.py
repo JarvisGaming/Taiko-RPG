@@ -25,5 +25,5 @@ google_auth = GoogleAuth(settings_file="data/google_cloud_settings.yaml")
 google_auth.LocalWebserverAuth(launch_browser=False)  # Creates local webserver and auto handles authentication
 google_drive = GoogleDrive(google_auth)
 
-# Command concurrency check, stores Discord IDs
-users_currently_running_submit_command: list[int] = []
+# Stores the Discord IDs of people currently running /submit
+users_currently_running_submit_command: set[int] = set()
