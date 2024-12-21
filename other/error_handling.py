@@ -56,7 +56,7 @@ if not os.getcwd().endswith("test"):
         if isinstance(error, app_commands.CheckFailure):
             return
         
-        # fihnasdoiuvbasdiubqawdiuyb
+        # Remove user from users_currently_running_submit_command if /submit exited early
         assert interaction.command is not None
         if interaction.command.name == "submit":
             users_currently_running_submit_command.remove(interaction.user.id)

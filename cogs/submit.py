@@ -105,12 +105,11 @@ class SubmitCog(commands.Cog):
             
             self.write_to_debug_file(debug_file, score, exp_manager, currency_manager)
             
-            # update db
             await self.add_score_to_database(score)
             
             if display_each_score.value:
                 await self.display_one_score(webhook, score, exp_gained_from_score, currency_gained_from_score, exp_manager, currency_manager)    
-            
+        
         debug_file.close()
         await webhook.send("All done!")
 
@@ -125,7 +124,7 @@ class SubmitCog(commands.Cog):
         
         if len(embed.fields) == 0:
             embed.add_field(name='', value="No change!")
-        
+            
         await webhook.send(embed=embed)
 
     def add_total_exp_change_to_embed(self, embed: discord.Embed, exp_manager: ExpManager):
