@@ -1,5 +1,9 @@
 # Taiko RPG
-Taiko RPG is an osu!taiko related Discord bot written in Python. Current features include:
+Taiko RPG is an osu!taiko related Discord bot written in Python, currently being hosted on the ![Taiko Skill Rating discord server](https://discord.gg/KeJhavCPYF).
+
+The commissioned osu!catch version can be found ![here](https://github.com/JarvisGaming/Catch-RPG).
+
+Current features include:
 
 ### Score submission
 ![image](https://github.com/user-attachments/assets/c9f6284d-36a0-45ed-a04c-332a419f8ff9)
